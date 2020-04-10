@@ -1,11 +1,15 @@
 package lib
 
+import lib.CMDUtils.CommandResult
 import lib.CMDUtils.execute
+import java.awt.FileDialog
+import java.awt.Frame
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.lang.Exception
 import java.lang.StringBuilder
+import java.lang.Thread.sleep
 
 object CMDUtils{
 
@@ -69,16 +73,18 @@ object CMDUtils{
     }
 }
 
+
+
+
 object PlatformTools{
     val libADB=".\\lib\\adb.exe"
     val libFastboot=".\\lib\\fastboot.exe"
     val charsetName = "UTF-8"
-    fun afs(arrayList: ArrayList<String>,isADB: Boolean): CMDUtils.CommandResult {
+    fun afs(arrayList: ArrayList<String>,isADB: Boolean): CommandResult {
         val stringBuilder =StringBuilder()
         var code = -114514
         for (i in arrayList){
 
-            println("afs $i")
             var result = af(i,isADB)
             stringBuilder.append("\n"+result.msg)
             if (!result.success){
@@ -89,13 +95,32 @@ object PlatformTools{
             }
         }
 
-        return CMDUtils.CommandResult(code,stringBuilder.toString()).also {
+        return CommandResult(code,stringBuilder.toString()).also {
             println(it.toString())
         }
     }
 
+    fun fastboot(string: String) = af(string,false)
+    fun fastboot(arrayList: ArrayList<String>) = af(arrayList,false)
 
-    fun af(string: String,isADB:Boolean): CMDUtils.CommandResult {
+    fun getFile(label:String): String? {
+        var resultfile:String? = null
+
+        FileDialog(Frame(),"请选择${label}镜像") .apply {
+            isVisible = true
+        }.run {
+            resultfile = directory+file
+        }
+        return resultfile
+
+    }
+    fun fastbootFlash(label: String) :CommandResult = fastboot(arrayListOf("flash",label, getFile(label)!!))
+    fun fastbootBoot() : CommandResult = fastboot(arrayListOf("boot", getFile("可用于Boot的")!!))
+    fun adb(string: String) = af(string,true)
+    fun adb(arrayList: ArrayList<String>) = af(arrayList,true)
+
+
+    fun af(string: String,isADB:Boolean): CommandResult {
         val arrayList = ArrayList<String>()
         arrayList.add(if (isADB)libADB else libFastboot)
         for (i in string.split(" ")){
@@ -104,7 +129,7 @@ object PlatformTools{
         return execute(arrayList, charsetName)
     }
 
-    fun af(list:List<String>,isADB:Boolean): CMDUtils.CommandResult {
+    fun af(list:List<String>,isADB:Boolean): CommandResult {
         val arrayList = ArrayList<String>()
         arrayList.add(if (isADB)libADB else libFastboot)
         for (i in list){
@@ -116,6 +141,9 @@ object PlatformTools{
         var result = ""
         var isSuccess = false
         loop@ while (true){
+            Thread.currentThread().apply {
+                sleep(1024)
+            }
             var cmdResult = af("devices",false)
             var msg = cmdResult.msg!!
             if (cmdResult.success){
@@ -148,3 +176,21 @@ object PlatformTools{
         return Pair(result,isSuccess)
     }
 }
+
+//        val adbEnvSetup= afs(arrayListOf("kill-server","start-server"),true)
+//        isVisabel = adbEnvSetup.success
+//        if (!isVisabel){
+//            Dialog(Frame()).apply {
+//                setBounds(200,200,300,700)
+//                add(JLabel().apply {
+//                    text="""<html>
+//                        <style>div{padding:5rem}</style>
+//                        <div>ADB启动失败，错误在：</div>
+//                        <div><div>${adbEnvSetup.msg!!.replace("\n","<br />")}</div></div>
+//                    </html>""".trimIndent()
+//                })
+//
+//                addWindowListener(windowExitListener)
+//                isVisible =true
+//            }
+//        }
