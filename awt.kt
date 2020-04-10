@@ -1,16 +1,16 @@
-import lib.CMDUtils
+
+import lib.*
 import lib.PlatformTools.af
-import lib.PlatformTools.afs
 import lib.PlatformTools.checkFastbootDevice
+import lib.PlatformTools.fastboot
+import lib.PlatformTools.fastbootBoot
+import lib.PlatformTools.fastbootFlash
 import java.awt.*
-import java.awt.event.MouseEvent
-import java.awt.event.MouseListener
-import java.awt.event.WindowEvent
-import java.awt.event.WindowListener
 import java.io.IOException
 import java.util.*
 import javax.swing.JLabel
 import kotlin.collections.ArrayList
+import kotlin.properties.Delegates
 
 
 //测试
@@ -20,31 +20,17 @@ import kotlin.collections.ArrayList
 //常量？
 val noteString="等待设备中，当检测到单个fastboot设备后，软件会自动跳转到下一个步骤。请将手机重启到fastboot再启动本软件，并且检查驱动是否成功安装到你的电脑上。" +
         "<br />相关视频：如何给电脑安装fastboot驱动 <br /> <a href='https://www.bilibili.com/video/BV1n64y1u7LE/'>https://www.bilibili.com/video/BV1n64y1u7LE/</a>"
-var windowExitListener = object :WindowListener{
-    override fun windowDeiconified(e: WindowEvent?) {}
 
-    override fun windowClosing(e: WindowEvent?) {
-        System.exit(0)
-    }
-    override fun windowClosed(e: WindowEvent?) {}
-    override fun windowActivated(e: WindowEvent?) {}
-    override fun windowDeactivated(e: WindowEvent?) {}
-    override fun windowOpened(e: WindowEvent?) {}
-    override fun windowIconified(e: WindowEvent?) {}
-
-}
 var isVisabel=false
 
 fun main(args: Array<String>) {
     main()
 }
 fun main() {
-    //主框架
-    log("主框架")
 
     Dialog(Frame()).apply{
         title = "等待设备中"
-        addWindowListener(windowExitListener)
+        addWindowListener(WindowListener())
         add(JLabel("""<html>
             <div>$noteString</div>
         </html>""".trimIndent()))
@@ -64,123 +50,57 @@ fun main() {
                           <div>${e.toString()}</div>
                         </html>""".trimIndent()
                 })
-                addWindowListener(windowExitListener)
+                addWindowListener(WindowListener())
                 setBounds(200,200,300,130)
                 isVisible = true
             }
             it.isVisible =false
         }
 
-
-
-//        val adbEnvSetup= afs(arrayListOf("kill-server","start-server"),true)
-//        isVisabel = adbEnvSetup.success
-//        if (!isVisabel){
-//            Dialog(Frame()).apply {
-//                setBounds(200,200,300,700)
-//                add(JLabel().apply {
-//                    text="""<html>
-//                        <style>div{padding:5rem}</style>
-//                        <div>ADB启动失败，错误在：</div>
-//                        <div><div>${adbEnvSetup.msg!!.replace("\n","<br />")}</div></div>
-//                    </html>""".trimIndent()
-//                })
-//
-//                addWindowListener(windowExitListener)
-//                isVisible =true
-//            }
-//        }
-
+    }.run {
+        isVisible = false
     }
-
+    //主框架
+    log("主框架")
     Frame().apply{
-
-
-
         //按钮
         Panel().apply {
-            class mouseListener(whatSlot: Boolean?):MouseListener{
-
-                val whatSlot = whatSlot
-                override fun mouseReleased(e: MouseEvent?) {
-
+            this.layout =FlowLayout()
+            mapOf<String?,Boolean?>(Pair(
+                    "a",true
+            ),Pair(
+                    "b",false
+            ),Pair(
+                    null,null
+            )).forEach { slot, v ->
+                addButton(if (v == null) {
+                    "选择文件刷入boot的ab分区"
+                } else {
+                    "选择文件刷入'boot_$slot'分区"
+                }) {
+                    flashPressListener(v)
                 }
+            }
+            addButton("启动boot镜像"){ printCommandResult(fastbootBoot()) }
+            mapOf<String,String>(Pair(
+                    "重启","reboot"
+            ),Pair(
+                    "清空数据","-w"
+            )).forEach { k,v ->
+                addButtonDoFastboot(k,v)
+            }
 
-                override fun mouseEntered(e: MouseEvent?) {
-
-                }
-
-                override fun mouseClicked(e: MouseEvent?) {
-
-                }
-
-                override fun mouseExited(e: MouseEvent?) {
-
-                }
-
-                var file =""
-
-
-                var result = ""
-
-                fun flashBoot(isSlotA: Boolean): CMDUtils.CommandResult {
-                    return af(listOf("flash","boot_${if(isSlotA) "a" else "b" }".apply { println("pts: $this") },"$file".apply { println("file: $this") }),false)
-                }
-
-
-                override fun mousePressed(e: MouseEvent?) {
-
-                    FileDialog(Frame()).apply {
-                        addWindowListener(windowExitListener)
-                    }.let { fd ->
-
-                        fd.isVisible = true
-                        with(fd.file) {
-                            file = fd.directory + this
-                            val loadingDialog = mkaDialog(arrayListOf("刷入中：\n","等待几秒即可获得结果。"))
-                            //if not null
-                            if (whatSlot == null) {
-                                flashBoot(true).run {
-                                    if (success) {
-                                        result = msg!!
-                                        flashBoot(false).run {
-                                            result = result + "\n" + msg
-                                            if (success) {
-                                                mkaDialog(arrayListOf("执行成功：","$result"))
-                                            }else{
-                                                mkaDialog(arrayListOf("执行失败：", "$result"))
-                                            }
-                                        }
-                                    } else {
-                                        mkaDialog(arrayListOf("执行失败：", "$msg"))
-                                    }
-                                    loadingDialog.isVisible=false
-                                }
-                            } else {
-                                with(flashBoot(whatSlot!!)){
-                                    if (success){
-                                        mkaDialog(arrayListOf("执行成功：","$msg"))
-                                    }else{
-                                        mkaDialog(arrayListOf("执行失败：", "$msg"))
-                                    }
-                                    loadingDialog.isVisible=false
-                                }
-                            }
+            arrayOf("a","b").iterator().forEach {slot ->
+                add(Panel(FlowLayout()).apply {
+                    addButtonDoFastboot("激活${slot}系统槽","--set-active=${slot}")
+                    arrayOf("dtbo","system","vendor","vbmeta").iterator().forEach {partition ->
+                        var partitions =  "${partition}_${slot}"
+                        addButton("选择文件刷入'${partitions}'分区"){
+                            printCommandResult(fastbootFlash(partitions))
                         }
                     }
-                }
-
-
+                })
             }
-            add(Button("选择文件刷入'boot_a'分区").apply {
-                addMouseListener(mouseListener(true))
-            })
-            add(Button("选择文件刷入'boot_b'分区").apply {
-                addMouseListener(mouseListener(false))
-            })
-            add(Button("选择文件刷入boot的ab分区（推荐）").apply {
-                addMouseListener(mouseListener(null))
-            })
         }.let {
             add(it)
             with(it){
@@ -190,46 +110,45 @@ fun main() {
 
     }.apply {
         log("点击事件")
-        addWindowListener(object :WindowListener{
-            override fun windowDeiconified(e: WindowEvent?) {}
-
-            override fun windowClosing(e: WindowEvent?) {
-                System.exit(0)
-            }
-            override fun windowClosed(e: WindowEvent?) {}
-            override fun windowActivated(e: WindowEvent?) {}
-            override fun windowDeactivated(e: WindowEvent?) {}
-            override fun windowOpened(e: WindowEvent?) {}
-            override fun windowIconified(e: WindowEvent?) {}
-
-        })
+        addWindowListener(WindowListener())
     }.run {
         title="黑字的刷Boot工具"
-        setBounds(100,100,500,500)
+        setBounds(100,100,900,150)
         isVisible =isVisabel
     }
 
 }
 
+fun Panel.addButton(label:String,function :(Button)->Unit) = this.apply {
+    add(Button(label).apply{
+        addMouseListener(clickMouseListener {
+            function(this)
+        })
+    })
+}
+fun Panel.addButtonDoFastboot(label:String,command:String) = this.apply {
+    add(Button(label).apply{
+        addMouseListener(clickMouseListener {
+            printCommandResult(fastboot(command))
+        })
+    })
+}
+
+
+fun Dialog.addCloseListener()= this.apply { addWindowListener(
+        closeListener {
+            isVisible = false
+        }
+) }
+
 fun mkaDialog(arrayList: ArrayList<String>) : Dialog {
     return Dialog(Frame()).apply {
-        setBounds(300,300,300,300)
+        setBounds(20,20,300,300)
         add(JLabel().apply {
             text = toHtml(arrayList)
         })
         isVisible = true
-        addWindowListener(object :WindowListener{    override fun windowDeiconified(e: WindowEvent?) {}
-
-            override fun windowClosing(e: WindowEvent?) {
-                isVisible = false
-            }
-            override fun windowClosed(e: WindowEvent?) {}
-            override fun windowActivated(e: WindowEvent?) {}
-            override fun windowDeactivated(e: WindowEvent?) {}
-            override fun windowOpened(e: WindowEvent?) {}
-            override fun windowIconified(e: WindowEvent?) {}
-
-        })
+        addCloseListener()
     }
 }
 
@@ -252,4 +171,79 @@ fun log(string: String): Unit {
     println("\n------------------\n" +
             "${Calendar.getInstance().time} : \n$string\n" +
             "------------------\n")
+}
+
+fun printCommandResult(result: CMDUtils.CommandResult): Unit {
+    with(result){
+        if (success){
+            mkaDialog(arrayListOf("执行成功：","$msg"))
+        }else{
+            mkaDialog(arrayListOf("执行失败：", "$msg"))
+        }
+    }
+}
+fun printCommandResult(result: CMDUtils.CommandResult, function : (Dialog,CMDUtils.CommandResult)->Unit ): Unit {
+    with(result){
+        if (success){
+            function(mkaDialog(arrayListOf("执行成功：","$msg")),this)
+        }else{
+            function(mkaDialog(arrayListOf("执行失败：", "$msg")),this)
+        }
+    }
+}
+fun printCommandResult(result: CMDUtils.CommandResult,whatBoolean: Boolean, function : (Dialog,CMDUtils.CommandResult)->Unit ): Unit {
+    with(result){
+        if (success){
+            if (whatBoolean){ function(mkaDialog(arrayListOf("执行成功：","$msg")),this) }else{mkaDialog(arrayListOf("执行成功：", "$msg"))}
+        }else{
+            if (!whatBoolean){ function(mkaDialog(arrayListOf("执行失败：", "$msg")),this) }else{mkaDialog(arrayListOf("执行失败：", "$msg"))}
+        }
+    }
+}
+fun printCommandResult(result: CMDUtils.CommandResult,functionTrue : (Dialog,CMDUtils.CommandResult)->Unit , functionFalse : (Dialog,CMDUtils.CommandResult)->Unit ): Unit {
+    with(result){
+        if (success){
+            functionTrue(mkaDialog(arrayListOf("执行成功：","$msg")),this)
+        }else{
+            functionFalse(mkaDialog(arrayListOf("执行失败：", "$msg")),this)
+        }
+
+    }
+}
+
+fun flashPressListener(whatSlot: Boolean?) {
+    var file =""
+    fun flashBoot(isSlotA: Boolean): CMDUtils.CommandResult {
+        return af(listOf("flash","boot_${if(isSlotA) "a" else "b" }".apply { println("pts: $this") },"$file".apply { println("file: $this") }),false)
+    }
+    FileDialog(Frame()).apply {
+        addWindowListener(WindowListener())
+        isVisible = true
+    }.run {
+        with(file) {
+            file = directory + this
+
+
+            if (whatSlot == null) {
+                var result by Delegates.notNull<String>()
+                val loadingDialog = mkaDialog(arrayListOf("刷入中：\n", "等待几秒即可获得结果。"))
+                printCommandResult(flashBoot(true), { dialog, commandResult ->
+                    dialog.isVisible = false
+                    result = commandResult.msg!!
+
+                    printCommandResult(flashBoot(false).apply {
+                        msg = "${result}\n${msg}"
+                    })
+                    loadingDialog.isVisible =false
+                }, { _, _ ->
+                    loadingDialog.isVisible =false
+                })
+            } else {
+                val loadingDialog = mkaDialog(arrayListOf("刷入中：\n", "等待几秒即可获得结果。"))
+                printCommandResult(flashBoot(true)) { _, _ ->
+                    loadingDialog.isVisible = false
+                }
+            }
+        }
+    }
 }
