@@ -4,12 +4,28 @@ import lib.CMDUtils.CommandResult
 import lib.CMDUtils.execute
 import java.awt.FileDialog
 import java.awt.Frame
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStreamReader
+import java.io.*
 import java.lang.Exception
 import java.lang.StringBuilder
 import java.lang.Thread.sleep
+
+
+fun main(args: Array<String>) {
+
+    println(
+            ("unlocked: yes\n" + "Finished. Total time: 0.001s" find "yes")
+    )
+//
+//    var time = System.currentTimeMillis()
+//    PlatformTools.adb("wait-for-device")
+//    time =System.currentTimeMillis() - time
+//    println("${time}ms")
+//    var ntime:Float= (time.toFloat()/1000)
+//    println("${ntime}s")
+//    var mtime:Int  = (ntime/60).toInt()
+//    println("${mtime}min")
+
+}
 
 object CMDUtils{
 
@@ -18,12 +34,11 @@ object CMDUtils{
     }
 
     fun execute(list: List<String>,charsetName:String): CommandResult {
-        var process:Process? = null
         var result = ""
         var code = -1
         println(list.toString())
         try {
-             process = ProcessBuilder(list).redirectErrorStream(true).start().apply {
+            ProcessBuilder(list).redirectErrorStream(true).start().apply {
                 BufferedReader(InputStreamReader(getInputStream(),charsetName)).apply {
                     result = readText().also {
                         println(it)
@@ -61,6 +76,7 @@ object CMDUtils{
 
 
     class CommandResult(code:Int){
+
         val code = code
         val success:Boolean = (code == 0)
 
@@ -70,10 +86,37 @@ object CMDUtils{
         override fun toString(): String {
             return "execute ${success} [${code},${msg}]"
         }
+        fun isSuccess(string: String) : Boolean {
+            println("\nis success start--------$string")
+            if (msg==null){
+            println("its null")
+            if (!success) println("unsuccess")
+            return false.apply {
+                println("end---------------")
+            }
+            }
+        else{
+            msg!!.println()
+                string.println()
+            return (msg!!find string ).apply {
+                toString().println()
+                println("end---------------")}
+            }
+        }
+        fun println() {println(toString())}
+        operator fun component1() = success
+        operator fun component2() = msg
     }
 }
 
 
+
+
+inline infix fun String.find(string: String): Boolean = (this.apply {  FileWriter(File("it")).write(this) } match "[\\n]*.*[\\n]*.*${string}[\\n]*.*[\\n]*.*").apply { println("$string , \n $this") }
+inline infix fun String.match(string: String):Boolean = this.matches(string.toRegex())
+inline fun String.println():String = run {
+    println(this)
+    this }
 
 
 object PlatformTools{
@@ -100,22 +143,20 @@ object PlatformTools{
         }
     }
 
-    fun fastboot(string: String) = af(string,false)
+    fun fastboot(string: String):CommandResult = af(string,false)
     fun fastboot(arrayList: ArrayList<String>) = af(arrayList,false)
 
     fun getFile(label:String): String? {
         var resultfile:String? = null
-
-        FileDialog(Frame(),"è¯·é€‰æ‹©${label}é•œåƒ") .apply {
+        FileDialog(Frame(),"ÇëÑ¡Ôñ${label}¾µÏñ") .apply {
             isVisible = true
         }.run {
             resultfile = directory+file
         }
         return resultfile
-
     }
     fun fastbootFlash(label: String) :CommandResult = fastboot(arrayListOf("flash",label, getFile(label)!!))
-    fun fastbootBoot() : CommandResult = fastboot(arrayListOf("boot", getFile("å¯ç”¨äºBootçš„")!!))
+    fun fastbootBoot() : CommandResult = fastboot(arrayListOf("boot", getFile("¿ÉÓÃÓÚBootµÄ")!!))
     fun adb(string: String) = af(string,true)
     fun adb(arrayList: ArrayList<String>) = af(arrayList,true)
 
@@ -150,11 +191,11 @@ object PlatformTools{
                 var lines = msg.lines()
                 when(lines.size){
                     0 -> {
-                        throw IOException("æœªçŸ¥é”™è¯¯")
+                        throw IOException("Î´Öª´íÎó")
                         System.exit(-1)
                     }
                     1->{
-                        println("æœªæ£€æµ‹åˆ°è®¾å¤‡")
+                        println("Î´¼ì²âµ½Éè±¸")
                     }
                     2->{
                         isSuccess = true
@@ -162,11 +203,11 @@ object PlatformTools{
                         break@loop
                     }
                     else->{
-                        println("å¤šå°è®¾å¤‡")
+                        println("¶àÌ¨Éè±¸")
                     }
                 }
             }else{
-                "cannot run fastboot devices ,error=9,$msg \nè¯·å°è¯•ä¸‹è½½å®Œæ•´åŒ…ã€‚".run {
+                "cannot run fastboot devices ,error=9,$msg \nÇë³¢ÊÔÏÂÔØÍêÕû°ü¡£".run {
                     throw IOException(this)
                     result = this
                 }
@@ -185,7 +226,7 @@ object PlatformTools{
 //                add(JLabel().apply {
 //                    text="""<html>
 //                        <style>div{padding:5rem}</style>
-//                        <div>ADBå¯åŠ¨å¤±è´¥ï¼Œé”™è¯¯åœ¨ï¼š</div>
+//                        <div>ADBÆô¶¯Ê§°Ü£¬´íÎóÔÚ£º</div>
 //                        <div><div>${adbEnvSetup.msg!!.replace("\n","<br />")}</div></div>
 //                    </html>""".trimIndent()
 //                })
@@ -194,3 +235,4 @@ object PlatformTools{
 //                isVisible =true
 //            }
 //        }
+fun adb(string: String) = PlatformTools.af(string, true)
