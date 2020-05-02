@@ -10,6 +10,7 @@ import me.heizi.utills.CommandExecutor.run
 import me.heizi.utills.PlatformTools.ADB.BootableMode.*
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.concurrent.thread
 
 internal val platformTool = PlatformTools
 internal val adb = PlatformTools.ADB
@@ -17,6 +18,7 @@ internal val fastboot = PlatformTools.Fastboot
 
 fun main(args: Array<String>) {
     var dir:String="/sdcard"
+
     while (true){
         PlatformTools.ADB shell {"ls ${dir}"}
         dir += Scanner(System.`in`).next()
@@ -28,6 +30,11 @@ object PlatformTools{
     private fun getSource(boolean: Boolean):String = if(boolean) adbSource else fastbootSource
 
     //防冗余
+//    private fun doCommand(isADB:Boolean,lists: Array<ArrayList<String>>?=null,list: ArrayList<String>? = null,string: String?) : CommandResult =
+//    when {
+//        list == null-> run(list,)
+//        else -> CommandResult(-114514)
+//    }
     private fun doCommand(isADB: Boolean,list: ArrayList<String>):CommandResult = run(arrayOf(list),false, getSource(isADB))
     private fun doCommand(isADB: Boolean,lists: Array<ArrayList<String>>):CommandResult = run(lists,false, getSource(isADB))
     private fun doCommand(isADB: Boolean,string: String):CommandResult = run(string,false, getSource(isADB))
@@ -55,6 +62,34 @@ object PlatformTools{
         infix fun erase (partition:String):CommandResult = platformTool fastboot "erase $partition"
         infix fun getvar (name:String):CommandResult = platformTool fastboot "getvar $name"
         infix fun reboot (isBootloader:Boolean):CommandResult = fastboot("reboot ")
+        class DeviceListener (start :Boolean = false) {
+            private val mythread: Thread = thread(start = false){
+                result = deviceListener()
+            }
+            init {
+                if (start) mythread.start()
+            }
+            lateinit var result: CommandResult
+
+            fun start() = mythread.start()
+            fun stop() = mythread.interrupt()
+        }
+        fun deviceListener(): CommandResult {
+            while (true){
+                val (b, s) = platformTool fastboot "devices"
+                if (b) {
+                    when (s!!.lines().size) {
+                        0 -> return CommandResult(-2,"未知错误")
+                        1 -> println("未检测到设备")
+                        2 -> return CommandResult(0,"检测到设备")
+                        else -> return CommandResult(2,"多台设备")
+                    }
+                } else return CommandResult(233,"或许是找不到文件\n$s") //                    "cannot run fastboot devices ,error=9,$s \n请尝试下载完整包。"
+                Thread.sleep(1024)
+
+            }
+            return CommandResult(-114514)
+        }
     }
 
     object ADB{

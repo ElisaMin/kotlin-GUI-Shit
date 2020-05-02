@@ -20,12 +20,16 @@ fun main(args: Array<String>) {
 
 
 fun PlatformTools.Fastboot.waitForDevice( ) :Boolean {
-    var dialog:JDialog = JDialog().apply { isVisible =false }
+    var dialog:JDialog? = null
     var rr = false
     /**
      * 线程IO处理Dialog
      * 线程Main处理For
      */
+    fun dialogVisible(boolean: Boolean) {
+        GlobalScope.launch(Dispatchers.IO) { dialog!!.isVisible = boolean }
+    }
+
     GlobalScope.launch(Dispatchers.IO) {
         dialog = Dialog {
             title = "等待设备中"
@@ -36,14 +40,10 @@ fun PlatformTools.Fastboot.waitForDevice( ) :Boolean {
             isVisible = true
         }
     }
-    GlobalScope.launch(Dispatchers.Main) {  }
-
-
-    suspend fun getrr():Boolean{
-     return  withContext(Dispatchers.Main){
-        var rr = false
+    GlobalScope.launch(Dispatchers.Default) {
         try {
             loop@ while (true) {
+                if (dialog!=null) if (!dialog!!.isVisible) break@loop
                 val (b, s) = platformTool fastboot "devices"
                 if (b) {
                     when (s!!.lines().size) {
@@ -54,7 +54,7 @@ fun PlatformTools.Fastboot.waitForDevice( ) :Boolean {
                             println("未检测到设备")
                         }
                         2 -> {
-                            dialog.isVisible = false
+                            dialogVisible(false)
                             rr = true
                             break@loop
                         }
@@ -72,9 +72,7 @@ fun PlatformTools.Fastboot.waitForDevice( ) :Boolean {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            dialog.isVisible = false
-            }
-            rr
+            dialogVisible(false)
         }
     }
     return rr
@@ -84,13 +82,13 @@ fun PlatformTools.Fastboot.waitForDevice( ) :Boolean {
 
 
 //fun Window.getFile():
-fun Window.getFile(): String = getFile(this)
-fun getFile():String = getFile(frame!!)
-fun getFile(parent:Component):String = JFileChooser().apply {
+fun Window.getFile(): String? = getFile(this)
+
+fun getFile(parent:Component = frame!! ):String? = JFileChooser().apply {
     isMultiSelectionEnabled = false
     showOpenDialog(parent)
     fileSelectionMode = JFileChooser.FILES_ONLY
-}.selectedFile.path.println()
+}.selectedFile?.path.println()
 
 fun showDialogAsResult(commandResult: CommandResult):Dialog = Dialog {
     val (b,s) = commandResult
@@ -125,7 +123,7 @@ fun Dialog(
     title:String = dialogDefaultTitle,
     modal :Boolean = false
     ,apply: JDialog.() -> Unit
-):JDialog = JDialog(frame,title,modal).apply(apply).apply(apply)
+):JDialog = JDialog(frame,title,modal).apply(apply).apply(dialogDefaultSetting)
 //fun Dialog(frame: Frame,title: String,apply: JDialog.() -> Unit):JDialog = JDialog(frame,title).apply(apply).apply(apply)
 //fun Dialog(frame: Frame,apply: JDialog.() -> Unit):JDialog = JDialog(frame).apply(dialogDefaultSetting).apply(apply)
 //fun Dialog(apply: JDialog.() -> Unit):JDialog =JDialog(frame!!).apply(dialogDefaultSetting).apply(apply)
@@ -135,8 +133,7 @@ fun TextDialog(frame: Frame =me.heizi.swing.frame!! ,title: String = dialogDefau
 /**
  * 添加Panel
  */
-
-fun Window.Panel(
+fun Container.Panel(
     constraint: Any? = null,
     layoutManager: LayoutManager?=null,
     apply: JPanel.() -> Unit
@@ -148,30 +145,10 @@ fun Window.Panel(
     }.apply(apply).also { if (constraint ==null) add(it) else add(it,constraint) }
 
 
-
-
-//fun Window.Panel(apply: JPanel.() -> Unit) : JPanel = JPanel().apply(apply).also { add(it) }
-//fun Window.Panel(layoutManager: LayoutManager, apply: JPanel.() -> Unit) : JPanel = JPanel(layoutManager).apply(apply).also { add(it) }
-//fun Window.Panel(constraint:Any , apply: JPanel.() -> Unit):JPanel =  JPanel().apply(apply).also { add(it,constraint) }
-//fun Window.Panel(constraint:Any ,layoutManager: LayoutManager, apply: JPanel.() -> Unit):JPanel =  JPanel(layoutManager).apply(apply).also { add(it,constraint) }
-
-/**
- * JPanel不生效重写
- */
-fun JPanel.Panel(apply: JPanel.() -> Unit):JPanel = JPanel().apply(apply).also{this.add(it)}
-fun JPanel.Panel(layoutManager: LayoutManager,apply: JPanel.() -> Unit):JPanel = JPanel(layoutManager).apply(apply).also{this.add(it)}
-
 /**
  * 添加常用部件
  */
-fun JPanel.Button(name:String,apply: MouseAdapter.(MouseEvent?) -> Unit) :JButton = JButton(name).apply{
-    addMouseListener(object : MouseAdapter(){
-        override fun mouseClicked(e: MouseEvent?) {
-            apply(e)
-        }
-    })
-}.also{add(it)}
-fun JPanel.Button(apply: MouseAdapter.(MouseEvent?) -> Unit) :JButton = JButton().apply{
+fun JPanel.Button(name:String = "按钮",apply: MouseAdapter.(MouseEvent?) -> Unit) :JButton = JButton(name).apply{
     addMouseListener(object : MouseAdapter(){
         override fun mouseClicked(e: MouseEvent?) {
             apply(e)
@@ -179,12 +156,12 @@ fun JPanel.Button(apply: MouseAdapter.(MouseEvent?) -> Unit) :JButton = JButton(
     })
 }.also{add(it)}
 
-fun Window.Label(dosth:JLabel.()->String) : JLabel = JLabel().apply { text = dosth().toHtml() }.also { add(it) }
+fun Container.Label(getString: ()-> String) = JLabel(getString().toHtml()).also { add(it) }
 
 
 fun String.toHtml(): String = """<html>
-    <div>${this.replace("\n","<br />")}</div>
-</html>""".trimIndent().println()
+    <body><div>${this.replace("\n","<br />")}</div>
+</body></html>""".trimIndent().println()
 
 fun <T> T.println() : T {
     kotlin.io.println(toString())
