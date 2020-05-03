@@ -1,10 +1,12 @@
 package me.heizi.swing
 
+import kotlinx.coroutines.runBlocking
 import me.heizi.utills.fastboot
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.FlowLayout
 import javax.swing.JFrame
+import kotlin.concurrent.thread
 
 const val welcome = "<h1>欢迎来到Heizi工具</h1>\n" +
         "<h3>点击下方(或任何未知)的按钮选择模式</h3>\n" +
@@ -14,7 +16,7 @@ const val welcome = "<h1>欢迎来到Heizi工具</h1>\n" +
         "(我想Java和Kotlin不用授权吧？)"
 
 var frame: JFrame? = null
-fun main(args: Array<String>) {
+fun main(args: Array<String>) = runBlocking {
     val cardLayout = CardLayout(20,20)
 
     frame = Frame {
@@ -37,11 +39,17 @@ fun main(args: Array<String>) {
                 Button("fastboot工具") {
 
                 }
-                Button("刷Boot") {
-                    if ( fastboot.waitForDevice().println() ){
-                        getFile()
-                    }
 
+                Button("刷Boot") {
+
+
+
+                    println("shit")
+                    waitForDeviceFastboot{
+                        getFile()?.let {file ->
+                            fastboot flash_ab Pair("boot",file) showResultAsDialog true
+                        }
+                    }
                 }
             }
         }

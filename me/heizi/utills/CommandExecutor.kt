@@ -7,7 +7,6 @@ import java.lang.Exception
 import java.lang.StringBuilder
 import kotlin.Boolean
 import me.heizi.utills.CommandExecutor.run
-import me.heizi.utills.PlatformTools.ADB.BootableMode.*
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
@@ -59,6 +58,7 @@ object PlatformTools{
             }
         }
         infix fun flash (pair: Pair<String,String>):CommandResult = platformTool fastboot "flash ${pair.first} ${pair.second}"
+        infix fun flash_ab(pair: Pair<String, String>):CommandResult = platformTool fastboot arrayOf(arrayListOf("flash",pair.first+"_a",pair.second), arrayListOf("flash",pair.first+"_b",pair.second))
         infix fun erase (partition:String):CommandResult = platformTool fastboot "erase $partition"
         infix fun getvar (name:String):CommandResult = platformTool fastboot "getvar $name"
         infix fun reboot (isBootloader:Boolean):CommandResult = fastboot("reboot ")
@@ -233,15 +233,28 @@ class CommandResult(code:Int){
     fun equals(commandResult: CommandResult): kotlin.Boolean = ((commandResult.message == message) and (commandResult.code == code))
     operator fun component1() = isSuccess
     operator fun component2() = message
+
+    infix fun whenSuccess(block: CommandResult.() -> Unit): CommandResult {
+        if (isSuccess) this.block()
+        return this
+    }
+    infix fun whenFailed(block: CommandResult.() -> Unit): CommandResult {
+        if (!isSuccess) this.block()
+        return this
+    }
+
+    fun doing(key:String?=null,falled: (() -> Unit?)? = null, success: () -> Unit): Unit {
+        fun withboolean(boolean: Boolean) = if (boolean) success() else falled?.let { it() }
+        when {
+            key !=null -> withboolean(isSuccess(key))
+            else -> withboolean(isSuccess)
+        }
+    }
+
 }
 
 fun main() {
-    CommandExecutor.execute(listOf("Sting"),"GBK")
 }
-
-// asrrayListOf(string) ++ array
-//
-
 
 
 infix fun String.find(string: String): Boolean = this match "[\\n]*.*[\\n]*.*${string}[\\n]*.*[\\n]*.*"
