@@ -2,18 +2,19 @@ package me.heizi.swing
 
 import kotlinx.coroutines.runBlocking
 import me.heizi.utills.fastboot
+import me.heizi.utills.log
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.FlowLayout
 import javax.swing.JFrame
 import kotlin.concurrent.thread
 
-const val welcome = "<h1>»¶Ó­À´µ½Heizi¹¤¾ß</h1>\n" +
-        "<h3>µã»÷ÏÂ·½(»òÈÎºÎÎ´Öª)µÄ°´Å¥Ñ¡ÔñÄ£Ê½</h3>\n" +
-        "¹ØÓÚ£ººÚ×ÖÖÆ×÷ \n" +
-        "½Ì³Ì£ºÎŞ£¬ËÙËÙÀë¿ª¡£\n" +
-        "·çÏÕ£º¸ß£¬µ«Ö»ÒªÖ¸ÁîÖ´ĞĞµÄÃ»ÓĞÎÊÌâ£¬Äã³öÁËÈÎºÎÎÊÌâÓëÎÒÎŞ¹Ø¡£ \n" +
-        "(ÎÒÏëJavaºÍKotlin²»ÓÃÊÚÈ¨°É£¿)"
+const val welcome = "<h1>æ¬¢è¿æ¥åˆ°Heiziå·¥å…·</h1>\n" +
+        "<h3>ç‚¹å‡»ä¸‹æ–¹(æˆ–ä»»ä½•æœªçŸ¥)çš„æŒ‰é’®é€‰æ‹©æ¨¡å¼</h3>\n" +
+        "å…³äºï¼šé»‘å­—åˆ¶ä½œ \n" +
+        "æ•™ç¨‹ï¼šæ— ï¼Œé€Ÿé€Ÿç¦»å¼€ã€‚\n" +
+        "é£é™©ï¼šé«˜ï¼Œä½†åªè¦æŒ‡ä»¤æ‰§è¡Œçš„æ²¡æœ‰é—®é¢˜ï¼Œä½ å‡ºäº†ä»»ä½•é—®é¢˜ä¸æˆ‘æ— å…³ã€‚ \n" +
+        "(æˆ‘æƒ³Javaå’ŒKotlinä¸ç”¨æˆæƒå§ï¼Ÿ)"
 
 var frame: JFrame? = null
 fun main(args: Array<String>) = runBlocking {
@@ -33,19 +34,18 @@ fun main(args: Array<String>) = runBlocking {
             south@Panel(
                 constraint = BorderLayout.SOUTH
             ){
-                Button("adb¹¤¾ß") {
+                Button("adbå·¥å…·") {
 
                 }
-                Button("fastboot¹¤¾ß") {
-                    TextDialog{ "test" }
+                Button("fastbootå·¥å…·") {
+                    fastboot getvar "unlocked"
                 }
 
-                Button("Ë¢Boot") {
-                    println("shit")
+                Button("åˆ·Boot") {
                     waitForDeviceFastboot{
                         getFile()?.let {file ->
                             fastboot flash_ab Pair("boot",file) showResultAsDialog true
-                        }
+                        } ?:this@runBlocking.log("æ²¡é€‰æ‹©æ–‡ä»¶")
                     }
                 }
             }

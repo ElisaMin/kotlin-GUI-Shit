@@ -5,8 +5,9 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.lang.Exception
 import java.lang.StringBuilder
-import kotlin.Boolean
+import kotlin.Boolean 
 import me.heizi.utills.CommandExecutor.run
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
@@ -28,7 +29,7 @@ object PlatformTools{
     var fastbootSource  = ".\\lib\\fastboot.exe"
     private fun getSource(boolean: Boolean):String = if(boolean) adbSource else fastbootSource
 
-    //·ÀÈßÓà
+    //é˜²å†—ä½™
 //    private fun doCommand(isADB:Boolean,lists: Array<ArrayList<String>>?=null,list: ArrayList<String>? = null,string: String?) : CommandResult =
 //    when {
 //        list == null-> run(list,)
@@ -79,14 +80,13 @@ object PlatformTools{
                 val (b, s) = platformTool fastboot "devices"
                 if (b) {
                     when (s!!.lines().size) {
-                        0 -> return CommandResult(-2,"Î´Öª´íÎó")
-                        1 -> println("Î´¼ì²âµ½Éè±¸")
-                        2 -> return CommandResult(0,"¼ì²âµ½Éè±¸")
-                        else -> return CommandResult(2,"¶àÌ¨Éè±¸")
+                        0 -> return CommandResult(-2,"æœªçŸ¥é”™è¯¯")
+                        1 -> println("æœªæ£€æµ‹åˆ°è®¾å¤‡")
+                        2 -> return CommandResult(0,"æ£€æµ‹åˆ°è®¾å¤‡")
+                        else -> return CommandResult(2,"å¤šå°è®¾å¤‡")
                     }
-                } else return CommandResult(233,"»òĞíÊÇÕÒ²»µ½ÎÄ¼ş\n$s") //                    "cannot run fastboot devices ,error=9,$s \nÇë³¢ÊÔÏÂÔØÍêÕû°ü¡£"
+                } else return CommandResult(233,"æˆ–è®¸æ˜¯æ‰¾ä¸åˆ°æ–‡ä»¶\n$s") //                    "cannot run fastboot devices ,error=9,$s \nè¯·å°è¯•ä¸‹è½½å®Œæ•´åŒ…ã€‚"
                 Thread.sleep(1024)
-
             }
             return CommandResult(-114514)
         }
@@ -171,41 +171,44 @@ object CommandExecutor {
 
 
     fun execute(list: List<String>, charsetName: String): CommandResult {
-        "[+ new command is running +]".println()
-        list.toString().println()
+        //log
+        "".println()
+        log("new command is running")
+        log(list.toString())
+
+        //return things
         var resultMessage = ""
         var resultCode = -1
+        //runtime
         try {
             ProcessBuilder(list).redirectErrorStream(true).start().apply{
                 InputStreamReader(inputStream,charsetName).apply {
                     BufferedReader(this).apply {
-                        resultMessage = readText().println()
+                        //get result
+                        resultMessage = readText().log()
                     }.close()
                 }.close()
              resultCode = exitValue()
             }.destroy()
-        }catch (e:IOException){// CommandExecuter@
-            if (e.message== null){ return CommandResult(114514) }
-            else {
-                with(e.message!!.println()){
-                    when {
-                        this find "error=" -> {
-                            resultCode = this.split("error=")[1].split(",").apply {
-                                resultMessage = when (size) {
-                                    0 -> {// return@CommandExecuter CommandResult(114514)
-                                        "null"
-                                    }
-                                    1 ->  "null"
-                                    2 -> this[1]
-                                    else ->{ toString().replace("[","").replace("]","") }
-                                }
-                            }[0].println().toInt()
+        }catch (e:IOException){
+            e.message?.run{
+                if ( this find "error=" ) {
+                    //["cannot run xxxx","114514,message"]
+                    resultCode = this.split("error=")[1].split(",").apply {
+                        //["114514","message"]
+                        resultMessage = when (size) {
+                            0->  {
+                                resultCode = 114514
+                                "null"
+                            }
+                            1 ->  "null"
+                            2 -> this[1]
+                            else ->{ toString().replace("[","").replace("]","") }
                         }
-                        else -> {
-                            resultMessage = this
-                            resultCode = 2333
-                        }
-                    }
+                    }[0].also { log() }.toInt()
+                } else  {
+                    resultMessage = this
+                    resultCode = 2333
                 }
             }
         }catch (e:Exception){ with(e){
@@ -214,12 +217,13 @@ object CommandExecutor {
             printStackTrace()
         }
         }finally {
+            log(resultCode.toString()+"\n"+resultMessage)
 
             return if (resultCode == 114514) {
                 CommandResult(114514)
             } else{
 
-                CommandResult(resultCode,resultMessage).also { it.println() }
+                CommandResult(resultCode,resultMessage)
             }
         }
     }
@@ -256,18 +260,17 @@ class CommandResult(code:Int){
 
 }
 
-fun main() {
-}
+var dateFormat:String? = null
+    get() {
+        return SimpleDateFormat("HH-mm-ss").format(Date())
+    }
 
-infix fun <T> T.log(string: String) {
-    println(
-"""
-        
-""".trimIndent())
+infix fun Any.log(string: String) {
+    string.lines().iterator().forEach {
+            println("+ | ${dateFormat} | ${ this::class.java.simpleName}: $it ")
+    }
 }
-
+fun String.log():String = apply { log(this) }
 infix fun String.find(string: String): Boolean = this match "[\\n]*.*[\\n]*.*${string}[\\n]*.*[\\n]*.*"
 infix fun String.match(string: String):Boolean = this.matches(string.toRegex())
-fun String.println():String = run {
-    println(this)
-    this }
+fun String.println():String = apply { println(this);this }

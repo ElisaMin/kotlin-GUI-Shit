@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers.Default
 import kotlinx.coroutines.Dispatchers.IO
 import me.heizi.utills.CommandResult
 import me.heizi.utills.PlatformTools
+import me.heizi.utills.log
 import me.heizi.utills.platformTool
 import java.awt.*
 import java.awt.event.MouseAdapter
@@ -24,11 +25,11 @@ fun waitForDeviceFastboot(dosth:()->Unit){
     GlobalScope.launch {
         launch(IO){
             dialog = TextDialog(
-                title = "µÈ´ıÉè±¸",
+                title = "ç­‰å¾…è®¾å¤‡",
                 show = true
             ){
-                "µÈ´ıÉè±¸ÖĞ£¬µ±¼ì²âµ½µ¥¸öfastbootÉè±¸ºó£¬Èí¼ş»á×Ô¶¯Ìø×ªµ½ÏÂÒ»¸ö²½Öè¡£Çë½«ÊÖ»úÖØÆôµ½fastbootÔÙÆô¶¯±¾Èí¼ş£¬²¢ÇÒ¼ì²éÇı¶¯ÊÇ·ñ³É¹¦°²×°µ½ÄãµÄµçÄÔÉÏ¡£" +
-                        "<br />Ïà¹ØÊÓÆµ£ºÈçºÎ¸øµçÄÔ°²×°fastbootÇı¶¯ <br /> <a href='https://www.bilibili.com/video/BV1n64y1u7LE/'>https://www.bilibili.com/video/BV1n64y1u7LE/</a>"
+                "ç­‰å¾…è®¾å¤‡ä¸­ï¼Œå½“æ£€æµ‹åˆ°å•ä¸ªfastbootè®¾å¤‡åï¼Œè½¯ä»¶ä¼šè‡ªåŠ¨è·³è½¬åˆ°ä¸‹ä¸€ä¸ªæ­¥éª¤ã€‚è¯·å°†æ‰‹æœºé‡å¯åˆ°fastbootå†å¯åŠ¨æœ¬è½¯ä»¶ï¼Œå¹¶ä¸”æ£€æŸ¥é©±åŠ¨æ˜¯å¦æˆåŠŸå®‰è£…åˆ°ä½ çš„ç”µè„‘ä¸Šã€‚" +
+                        "<br />ç›¸å…³è§†é¢‘ï¼šå¦‚ä½•ç»™ç”µè„‘å®‰è£…fastbooté©±åŠ¨ <br /> <a href='https://www.bilibili.com/video/BV1n64y1u7LE/'>https://www.bilibili.com/video/BV1n64y1u7LE/</a>"
             }
         }
 
@@ -36,23 +37,23 @@ fun waitForDeviceFastboot(dosth:()->Unit){
             try {
                 loop@ while (true) {
                     if (dialog != null){if (!dialog!!.isVisible) {
-                        println("´°¿Ú¹Ø±Õ")
+                        println("çª—å£å…³é—­")
                         break@loop
                     }}
                     val (b, s) = platformTool fastboot "devices"
                     if (b) {
                         when (s!!.lines().size) {
-                            0 -> throw IOException("Î´Öª´íÎó")
-                            1 -> println("Î´¼ì²âµ½Éè±¸")
+                            0 -> throw IOException("æœªçŸ¥é”™è¯¯")
+                            1 -> log("æœªæ£€æµ‹åˆ°è®¾å¤‡")
                             2 -> {
                                 dialog?.isVisible = false
                                 dosth()
                                 break@loop
                             }
-                            else -> println("¶àÌ¨Éè±¸£¬Çë°ÎµôµçÄÔµÄµçÔ´ÏßÈ»ºó¾²¾²È¥ÊÀ£¨Îí£©£¨²»»áÕæÓĞÈËÖªµÀÏÖÔÚÒª¸ÉÂï°É ²»»á°É£©¡£")
+                            else -> println("å¤šå°è®¾å¤‡ï¼Œè¯·æ‹”æ‰ç”µè„‘çš„ç”µæºçº¿ç„¶åé™é™å»ä¸–ï¼ˆé›¾ï¼‰ï¼ˆä¸ä¼šçœŸæœ‰äººçŸ¥é“ç°åœ¨è¦å¹²å˜›å§ ä¸ä¼šå§ï¼‰ã€‚")
                         }
                     } else {
-                        "cannot run fastboot devices ,error=9,$s \nÇë³¢ÊÔÏÂÔØÍêÕû°ü¡£".run {
+                        "cannot run fastboot devices ,error=9,$s \nè¯·å°è¯•ä¸‹è½½å®Œæ•´åŒ…ã€‚".run {
                             throw IOException(this)
                         }
                     }
@@ -84,10 +85,10 @@ fun waitForDeviceFastboot(dosth:()->Unit){
 //                if (b) {
 //                    when (s!!.lines().size) {
 //                        0 -> {
-//                            throw IOException("Î´Öª´íÎó")
+//                            throw IOException("æœªçŸ¥é”™è¯¯")
 //                        }
 //                        1 -> {
-//                            println("Î´¼ì²âµ½Éè±¸")
+//                            println("æœªæ£€æµ‹åˆ°è®¾å¤‡")
 //                        }
 //                        2 -> {
 //                            dialogVisible(false)
@@ -95,11 +96,11 @@ fun waitForDeviceFastboot(dosth:()->Unit){
 //                            return@withContext true
 //                        }
 //                        else -> {
-//                            println("¶àÌ¨Éè±¸")
+//                            println("å¤šå°è®¾å¤‡")
 //                        }
 //                    }
 //                } else {
-//                    "cannot run fastboot devices ,error=9,$s \nÇë³¢ÊÔÏÂÔØÍêÕû°ü¡£".run {
+//                    "cannot run fastboot devices ,error=9,$s \nè¯·å°è¯•ä¸‹è½½å®Œæ•´åŒ…ã€‚".run {
 //
 //                        throw IOException(this)
 //                    }
@@ -116,10 +117,10 @@ fun waitForDeviceFastboot(dosth:()->Unit){
 //
 //     GlobalScope.launch(Dispatchers.IO) {
 //        dialog = Dialog {
-//            title = "µÈ´ıÉè±¸ÖĞ"
+//            title = "ç­‰å¾…è®¾å¤‡ä¸­"
 //            Label {
-//                "µÈ´ıÉè±¸ÖĞ£¬µ±¼ì²âµ½µ¥¸öfastbootÉè±¸ºó£¬Èí¼ş»á×Ô¶¯Ìø×ªµ½ÏÂÒ»¸ö²½Öè¡£Çë½«ÊÖ»úÖØÆôµ½fastbootÔÙÆô¶¯±¾Èí¼ş£¬²¢ÇÒ¼ì²éÇı¶¯ÊÇ·ñ³É¹¦°²×°µ½ÄãµÄµçÄÔÉÏ¡£" +
-//                        "<br />Ïà¹ØÊÓÆµ£ºÈçºÎ¸øµçÄÔ°²×°fastbootÇı¶¯ <br /> <a href='https://www.bilibili.com/video/BV1n64y1u7LE/'>https://www.bilibili.com/video/BV1n64y1u7LE/</a>"
+//                "ç­‰å¾…è®¾å¤‡ä¸­ï¼Œå½“æ£€æµ‹åˆ°å•ä¸ªfastbootè®¾å¤‡åï¼Œè½¯ä»¶ä¼šè‡ªåŠ¨è·³è½¬åˆ°ä¸‹ä¸€ä¸ªæ­¥éª¤ã€‚è¯·å°†æ‰‹æœºé‡å¯åˆ°fastbootå†å¯åŠ¨æœ¬è½¯ä»¶ï¼Œå¹¶ä¸”æ£€æŸ¥é©±åŠ¨æ˜¯å¦æˆåŠŸå®‰è£…åˆ°ä½ çš„ç”µè„‘ä¸Šã€‚" +
+//                        "<br />ç›¸å…³è§†é¢‘ï¼šå¦‚ä½•ç»™ç”µè„‘å®‰è£…fastbooté©±åŠ¨ <br /> <a href='https://www.bilibili.com/video/BV1n64y1u7LE/'>https://www.bilibili.com/video/BV1n64y1u7LE/</a>"
 //            }
 //            isVisible = true
 //        }
@@ -142,8 +143,8 @@ fun getFile(parent:Component = frame!! ):String? = JFileChooser().apply {
 
 fun showDialogAsResult(commandResult: CommandResult):Dialog = Dialog {
     val (b,s) = commandResult
-    title = "Ö´ĞĞ½á¹û"
-    Label { "Ö´ĞĞ"+ if (b){ "³É¹¦£º" }else{ "Ê§°Ü£º" } +"\n $s"}
+    title = "æ‰§è¡Œç»“æœ"
+    Label { "æ‰§è¡Œ"+ if (b){ "æˆåŠŸï¼š" }else{ "å¤±è´¥ï¼š" } +"\n $s"}
     setSize(300,300)
 }
 infix fun CommandResult.showResultAsDialog(boolean: Boolean) : Dialog = showDialogAsResult(this)
@@ -163,7 +164,7 @@ fun Frame(apply:JFrame.()->Unit) : JFrame = JFrame().apply {
 /**
  * Dialog
  */
-private const val dialogDefaultTitle="ÌáÊ¾"
+private const val dialogDefaultTitle="æç¤º"
 private val dialogDefaultSetting : JDialog.()->Unit = {
     setSize(300,200)
     setLocationRelativeTo(null)
@@ -207,7 +208,7 @@ fun TextDialog(
 }
 
 /**
- * Ìí¼ÓPanel
+ * æ·»åŠ Panel
  */
 fun Container.Panel(
     constraint: Any? = null,
@@ -222,9 +223,9 @@ fun Container.Panel(
 
 
 /**
- * Ìí¼Ó³£ÓÃ²¿¼ş
+ * æ·»åŠ å¸¸ç”¨éƒ¨ä»¶
  */
-fun JPanel.Button(name:String = "°´Å¥",apply: MouseAdapter.(MouseEvent?) -> Unit) :JButton = JButton(name).apply{
+fun JPanel.Button(name:String = "æŒ‰é’®",apply: MouseAdapter.(MouseEvent?) -> Unit) :JButton = JButton(name).apply{
     addMouseListener(object : MouseAdapter(){
         override fun mouseClicked(e: MouseEvent?) {
             apply(e)
