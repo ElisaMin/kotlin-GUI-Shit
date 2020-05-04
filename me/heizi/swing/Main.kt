@@ -37,13 +37,10 @@ fun main(args: Array<String>) = runBlocking {
 
                 }
                 Button("fastboot¹¤¾ß") {
-
+                    TextDialog{ "test" }
                 }
 
                 Button("Ë¢Boot") {
-
-
-
                     println("shit")
                     waitForDeviceFastboot{
                         getFile()?.let {file ->

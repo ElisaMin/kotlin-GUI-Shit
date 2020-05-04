@@ -168,8 +168,10 @@ object CommandExecutor {
         return CommandResult(resultCode,resultMessage.toString())
     }
     fun run(list: List<String>, isGBK: Boolean) = execute(list, getCharset(isGBK))
+
+
     fun execute(list: List<String>, charsetName: String): CommandResult {
-        "new command is running--------------".println()
+        "[+ new command is running +]".println()
         list.toString().println()
         var resultMessage = ""
         var resultCode = -1
@@ -212,11 +214,12 @@ object CommandExecutor {
             printStackTrace()
         }
         }finally {
-            if (resultCode == 114514) {
-                return CommandResult(114514)
-            }
-            else{
-                return CommandResult(resultCode,resultMessage).also { it.println() }
+
+            return if (resultCode == 114514) {
+                CommandResult(114514)
+            } else{
+
+                CommandResult(resultCode,resultMessage).also { it.println() }
             }
         }
     }
@@ -256,6 +259,12 @@ class CommandResult(code:Int){
 fun main() {
 }
 
+infix fun <T> T.log(string: String) {
+    println(
+"""
+        
+""".trimIndent())
+}
 
 infix fun String.find(string: String): Boolean = this match "[\\n]*.*[\\n]*.*${string}[\\n]*.*[\\n]*.*"
 infix fun String.match(string: String):Boolean = this.matches(string.toRegex())
