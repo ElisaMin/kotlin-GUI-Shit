@@ -37,7 +37,7 @@ object PlatformTools{
 //    }
     private fun doCommand(isADB: Boolean,list: ArrayList<String>):CommandResult = run(arrayOf(list),false, getSource(isADB))
     private fun doCommand(isADB: Boolean,lists: Array<ArrayList<String>>):CommandResult = run(lists,false, getSource(isADB))
-    private fun doCommand(isADB: Boolean,string: String):CommandResult = run(string,false, getSource(isADB))
+    private fun doCommand(isADB: Boolean,string: String):CommandResult = run(string,getSource(isADB),isGBK = false )
 
     //adb and fastboot
     infix fun adb(list: ArrayList<String>):CommandResult =              doCommand(true,list)
@@ -131,12 +131,27 @@ object CommandExecutor {
 
     private fun getCharset(isGBK: Boolean):String = if (isGBK) "GBK" else "UTF-8"
 
-    fun run(string: String): CommandResult = execute(listOf(string),"GBK")
+    /**
+     * if u wanna execute this command like CMD doing
+        * set me = heizi
+     * it use like
+        run(listOf<"set","me=heizi">)
+        //or
+        run("set me=heizi",true)
+     */
+    fun run(list: List<String>,isGBK: Boolean = true):CommandResult = execute(list, getCharset(isGBK))
+    fun run(command: String,isSplit: Boolean = false,isGBK: Boolean = true): CommandResult = execute(if (isSplit) {command.split(" ")} else {arrayListOf(command)}, getCharset(isGBK))
 
-    fun run(string: String,isSplit:Boolean,isGBK:Boolean): CommandResult = execute(if (isSplit) {string.split(" ")} else {arrayListOf(string)}, getCharset(isGBK))
-
-    fun run(array: Array<ArrayList<String>>, isGBK:Boolean): CommandResult = run(array, getCharset(isGBK),null)
-
+    /*
+    use like this
+        // adb reboot bootloader
+        val command1= Pair("path/to/adb.exe",listOf("reboot","bootloader"))
+        // fastboot oem unlock
+        val command2= Pair("path/to/fastboot.exe",listOf("oem","unlock"))
+        //just run this command
+        run(arrayOf(command1,command2))
+     */
+    fun run(array: Array<ArrayList<String>>, isGBK:Boolean = true): CommandResult = run(array, getCharset(isGBK),null)
     fun run(arrayList: ArrayList<Pair<String,List<String>>>,charsetName: String):CommandResult{
         var resultCode = -114514
         val resultMessage = StringBuilder()
@@ -148,9 +163,32 @@ object CommandExecutor {
         }
         return CommandResult(resultCode,resultMessage.toString())
     }
-    fun run(string: String,isGBK: Boolean,runnable: String) :CommandResult = execute(listOf(runnable,string), getCharset(isGBK))
-    fun run(lists: Array<ArrayList<String>>,isGBK: Boolean,runnable: String?): CommandResult = run(lists, getCharset(isGBK),runnable)
-    fun run(lists: Array<ArrayList<String>>,charsetName:String,runnable: String?): CommandResult {
+
+    /**
+     * runable is a file witch can run on the bash or cmd, e.g ADB.exe
+     * when u need something like
+        * `adb push file /data/local/tmp/file && adb shell chmod 755 /data/local/tmp/file && adb shell /data/local/tmp/file`
+     * we can do like
+         val file = "/data/local/tmp/file"
+         val command1= listOf("push","file",file)
+         val command2= listOf("shell","chmod","755",file)
+         val command3= listOf("shell",file)
+         val array = arrayOf(command1,command2,command3)
+         val result = run(array,true,"./path/to/adb")
+         println(result.msg!!)
+     */
+
+    fun run(string: String,runnable: String,isGBK: Boolean = false,isSplit: Boolean = true) :CommandResult = if (isSplit)
+        execute(arrayListOf(runnable).apply { addAll(string.split(" ")) }, getCharset(isGBK)) else execute(listOf(runnable,string), getCharset(isGBK))
+    fun run(strings:Array<String>,isGBK: Boolean,runnable: String?=null):CommandResult {
+        val arrayList = ArrayList<ArrayList<String>>()
+        for (s in strings) {
+            arrayList.add(arrayListOf(s))
+        }
+        return  this.run( arrayList.toArray() as Array<ArrayList<String>> ,isGBK,runnable)
+    }
+    fun run(lists: Array<ArrayList<String>>,isGBK: Boolean,runnable: String?=null): CommandResult = run(lists, getCharset(isGBK),runnable)
+    fun run(lists: Array<ArrayList<String>>,charsetName:String,runnable: String?=null): CommandResult {
         var resultCode = -114514
         val resultMessage = StringBuilder()
         val header= if (runnable == null ) { arrayListOf("cmd","/c") }else{ arrayListOf("$runnable") }
@@ -167,30 +205,43 @@ object CommandExecutor {
 
         return CommandResult(resultCode,resultMessage.toString())
     }
-    fun run(list: List<String>, isGBK: Boolean) = execute(list, getCharset(isGBK))
 
-
+    /**
+     * 执行代码行
+     * 返回：command result对象
+     * 参数list： 一组指令
+     * charsetName: 字符集名字 一般为UTF-8或GBK
+     * 实例  ：execute(listOf("cmd","echo","hello world"),"GBK")
+     * 返回值：CommandResult:[0,hello world]
+     */
     fun execute(list: List<String>, charsetName: String): CommandResult {
         //log
         "".println()
         log("new command is running")
         log(list.toString())
 
-        //return things
+        //方法内"全局"变量
         var resultMessage = ""
         var resultCode = -1
+
         //runtime
         try {
-            ProcessBuilder(list).redirectErrorStream(true).start().apply{
-                InputStreamReader(inputStream,charsetName).apply {
-                    BufferedReader(this).apply {
-                        //get result
+            //使用processBuilder 设置错误流 开始后返回一个Process对象
+            ProcessBuilder(list).redirectErrorStream(true).start().
+            apply{
+                //新建一个InputStream 传入参数 Process.inputStream和charsetName 用ins作为变量新建作用域函数
+                InputStreamReader(inputStream,charsetName).also {ins ->
+                    //新建一个缓冲区读取器 传入上面的InputStream
+                    BufferedReader(ins).apply {
+                        //读到里面的text并打印
                         resultMessage = readText().log()
-                    }.close()
-                }.close()
-             resultCode = exitValue()
-            }.destroy()
+                    }.close() //关闭BufferReader
+                }.close() //关闭inputStream
+                resultCode = exitValue() //获取process.exitValue
+            }.destroy() //摧毁 ProcessBuilder
         }catch (e:IOException){
+            //IOException 一般为执行错误
+            // cannot run echo,error=1,no such file or directory
             e.message?.run{
                 if ( this find "error=" ) {
                     //["cannot run xxxx","114514,message"]

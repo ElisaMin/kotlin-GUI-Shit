@@ -1,6 +1,7 @@
 package me.heizi.swing
 
 import kotlinx.coroutines.runBlocking
+import me.heizi.utills.CommandExecutor.execute
 import me.heizi.utills.fastboot
 import me.heizi.utills.log
 import java.awt.BorderLayout
@@ -38,7 +39,9 @@ fun main(args: Array<String>) = runBlocking {
 
                 }
                 Button("fastboot工具") {
+
                     fastboot getvar "unlocked"
+
                 }
 
                 Button("刷Boot") {
