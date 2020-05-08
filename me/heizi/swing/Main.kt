@@ -8,6 +8,7 @@ import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.FlowLayout
 import javax.swing.JFrame
+import me.heizi.swing.swingx.*
 import kotlin.concurrent.thread
 
 const val welcome = "<h1>欢迎来到Heizi工具</h1>\n" +
