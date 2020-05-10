@@ -15,6 +15,7 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.IOException
 import javax.swing.*
+import javax.swing.border.TitledBorder
 import kotlin.system.exitProcess
 
 
@@ -39,15 +40,19 @@ infix fun CommandResult.showResultAsDialog(boolean: Boolean) : Dialog = showDial
 
 fun Window.exitOnClosing(code:Int) {addWindowListener(object :WindowAdapter(){ override fun windowClosing(e: WindowEvent?) { exitProcess(code)} })}
 infix fun Window.exitOnClosing(boolean: Boolean) {addWindowListener(object :WindowAdapter(){ override fun windowClosing(e: WindowEvent?) { if (boolean)exitProcess(0)  } })}
-fun Frame(apply:JFrame.()->Unit) : JFrame = JFrame().apply {
-    //default
-    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-    defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-    exitOnClosing(true)
-    setLocationRelativeTo(null)
-    setSize(500,300)
 
-}.apply(apply).apply { isVisible = true }
+/**
+ * add frame
+ */
+fun Frame(isSystemStyle:Boolean = true,exitOnClose:Boolean=true,size:Pair<Int,Int> = Pair(500,500),show: Boolean = true,apply:JFrame.()->Unit) : JFrame = JFrame().apply {
+
+    if (isSystemStyle) UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+    if (exitOnClose)   defaultCloseOperation = JFrame.EXIT_ON_CLOSE ;exitOnClosing(true)
+
+    setLocationRelativeTo(null)
+    setSize(size.first,size.second)
+
+}.apply(apply).apply { isVisible = show }
 
 /**
  * Dialog
@@ -87,6 +92,7 @@ fun TextDialog(
  * 添加Panel
  */
 fun Container.Panel(
+    title:String?=null,
     constraint: Any? = null,
     layoutManager: LayoutManager?=null,
     apply: JPanel.() -> Unit
@@ -95,13 +101,40 @@ fun Container.Panel(
         JPanel()
     }else{
         JPanel(layoutManager)
-    }.apply(apply).also { if (constraint ==null) add(it) else add(it,constraint) }
+    }.also {
+
+        constraint?.let {cons ->
+            add(it,cons)
+        } ?:add(it)
+
+
+        title?.let {s ->
+            it.setTitle(title)
+        }
+
+    }.apply(apply)
+
+/**
+ * Panel title
+ */
+fun JPanel.setTitle(string: String): Unit {
+    this.border = BorderFactory.createTitledBorder(string)
+}
+fun JPanel.getTitle():String?{
+    return if (border !== null){
+        val b = border as TitledBorder
+        b.title
+    }else{
+        null
+    }
+}
+
 
 
 /**
  * 添加常用部件
  */
-fun JPanel.Button(name:String = "按钮",apply: MouseAdapter.(MouseEvent?) -> Unit) :JButton = JButton(name).apply{
+fun JPanel.Button(name:String = "按钮",apply: JButton.(MouseEvent?) -> Unit) :JButton = JButton(name).apply{
     addMouseListener(object : MouseAdapter(){
         override fun mouseClicked(e: MouseEvent?) {
             apply(e)

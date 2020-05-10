@@ -62,7 +62,7 @@ object PlatformTools{
         infix fun flash_ab(pair: Pair<String, String>):CommandResult = platformTool fastboot arrayOf(arrayListOf("flash",pair.first+"_a",pair.second), arrayListOf("flash",pair.first+"_b",pair.second))
         infix fun erase (partition:String):CommandResult = platformTool fastboot "erase $partition"
         infix fun getvar (name:String):CommandResult = platformTool fastboot "getvar $name"
-        infix fun reboot (isBootloader:Boolean):CommandResult = fastboot("reboot ")
+        infix fun reboot (isBootloader:Boolean):CommandResult = fastboot(if (isBootloader)"reboot" else "reboot bootloader")
         class DeviceListener (start :Boolean = false) {
             private val mythread: Thread = thread(start = false){
                 result = deviceListener()
