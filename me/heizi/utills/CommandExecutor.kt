@@ -147,7 +147,7 @@ object CommandExecutor {
      * if u wanna execute this command like CMD doing
         * set me = heizi
      * it use like
-        run(listOf<"set","me=heizi">)
+        run(listOf（"set","me=heizi"）)
         //or
         run("set me=heizi",true)
      */
@@ -190,8 +190,20 @@ object CommandExecutor {
          println(result.msg!!)
      */
 
-    fun run(string: String,runnable: String,isGBK: Boolean = false,isSplit: Boolean = true) :CommandResult = if (isSplit)
-        execute(arrayListOf(runnable).apply { addAll(string.split(" ")) }, getCharset(isGBK)) else execute(listOf(runnable,string), getCharset(isGBK))
+    fun run(
+        string: String,
+        runnable: String,
+        isGBK: Boolean = false,
+        isSplit: Boolean = true
+    ) :CommandResult =
+        if (isSplit)
+            execute(arrayListOf(runnable).apply{
+                    addAll(string.split(" "))
+                }, getCharset(isGBK)
+            )
+        else
+            execute(listOf(runnable,string), getCharset(isGBK))
+
     fun run(strings:Array<String>,isGBK: Boolean,runnable: String?=null):CommandResult {
         val arrayList = ArrayList<ArrayList<String>>()
         for (s in strings) {
@@ -199,7 +211,9 @@ object CommandExecutor {
         }
         return  this.run( arrayList.toArray() as Array<ArrayList<String>> ,isGBK,runnable)
     }
+
     fun run(lists: Array<ArrayList<String>>,isGBK: Boolean,runnable: String?=null): CommandResult = run(lists, getCharset(isGBK),runnable)
+
     fun run(lists: Array<ArrayList<String>>,charsetName:String,runnable: String?=null): CommandResult {
         var resultCode = -114514
         val resultMessage = StringBuilder()
@@ -253,7 +267,7 @@ object CommandExecutor {
             }.destroy() //摧毁 ProcessBuilder
         }catch (e:IOException){
             //IOException 一般为执行错误
-            // cannot run echo,error=1,no such file or directory
+            //E 一般为： cannot run echo,error=1,no such file or directory
             e.message?.run{
                 if ( this find "error=" ) {
                     //["cannot run xxxx","114514,message"]
@@ -293,17 +307,33 @@ object CommandExecutor {
 }
 
 class CommandResult(code:Int){
+
+    /************************************************
+     *                 我也不知道要写啥                *
+     ************************************************/
+
+    //子构造函数
     constructor(code:Int,message:String) : this(code) { this.message = message }
+    //执行代码
     val code = code
+    //如果不是0则不成功
     var isSuccess = (code == 0)
+    //信息
     var message :String? = null
+    //判断是否包含SubString 如果包含返回true
     fun isSuccess(string: String) : Boolean = (if (message==null)  false else  (message!! find string))
+    //Result:[0,null]
     override fun toString(): String = "Result:[$code,$message]"
-    fun println() {println(toString())}
-    fun equals(commandResult: CommandResult): kotlin.Boolean = ((commandResult.message == message) and (commandResult.code == code))
+
+    //暂时无用
+    //fun println() {println(toString())}
+    //fun equals(commandResult: CommandResult): kotlin.Boolean = ((commandResult.message == message) and (commandResult.code == code))
+
+    //val (success,message) = commandResult
+    //println(message)
     operator fun component1() = isSuccess
     operator fun component2() = message
-
+    //暂时无用
     infix fun whenSuccess(block: CommandResult.() -> Unit): CommandResult {
         if (isSuccess) this.block()
         return this
@@ -312,13 +342,29 @@ class CommandResult(code:Int){
         if (!isSuccess) this.block()
         return this
     }
-
-    fun doing(key:String?=null,falled: (() -> Unit?)? = null, success: () -> Unit): Unit {
-        fun withboolean(boolean: Boolean) = if (boolean) success() else falled?.let { it() }
-        when {
-            key !=null -> withboolean(isSuccess(key))
-            else -> withboolean(isSuccess)
+    //暂时无用
+    fun doing(
+        key:String?=null,
+        falled: (() -> Unit)? = null,
+        success:(() -> Unit)? = null
+    ): Unit {
+        //冗余代码块
+        fun block(boolean: Boolean){
+            if (boolean){
+                success?.let {
+                    it()
+                }
+            }else{
+                falled?.let {
+                    it()
+                }
+            }
         }
+        //探空
+        key?.let { k ->
+            block(isSuccess(k))
+        } ?: //如果为空
+            block(isSuccess)
     }
 
 }
