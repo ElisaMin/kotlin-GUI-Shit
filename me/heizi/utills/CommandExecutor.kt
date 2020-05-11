@@ -51,16 +51,28 @@ object PlatformTools{
     object Fastboot{
 
         val isBootloaderUnlocked:Boolean? get() {
-            val r =CommandResult(1)
+            val r = fastboot getvar "unlocked"
+            log(r.message!!)
             return when{
                 r.isSuccess("yes") -> true
                 r.isSuccess("no") -> false
                 else -> null
             }
         }
+
+        //partition
         infix fun flash (pair: Pair<String,String>):CommandResult = platformTool fastboot "flash ${pair.first} ${pair.second}"
         infix fun flash_ab(pair: Pair<String, String>):CommandResult = platformTool fastboot arrayOf(arrayListOf("flash",pair.first+"_a",pair.second), arrayListOf("flash",pair.first+"_b",pair.second))
         infix fun erase (partition:String):CommandResult = platformTool fastboot "erase $partition"
+
+        //slot
+        infix fun switchSlotAB(isSlotA: Boolean):CommandResult = platformTool fastboot "--set-active=${if (isSlotA) "a" else "b"}"
+        infix fun setSlot(slot: String):CommandResult = platformTool fastboot "--set-active=$slot"
+
+        //boot
+        infix fun boot(path: String):CommandResult = platformTool fastboot arrayListOf("boot",path)
+
+
         infix fun getvar (name:String):CommandResult = platformTool fastboot "getvar $name"
         infix fun reboot (isBootloader:Boolean):CommandResult = fastboot(if (isBootloader)"reboot" else "reboot bootloader")
         class DeviceListener (start :Boolean = false) {

@@ -22,8 +22,9 @@ import kotlin.system.exitProcess
 
 
 
-fun Window.getFile(): String? = getFile(this)
-fun getFile(parent:Component = frame!! ):String? = JFileChooser().apply {
+//fun Window.getFile(): String? = getFile(this)
+fun getFile(parent:Component = frame!!,dialogTitle:String = "选择文件" ):String? = JFileChooser().apply {
+    this.dialogTitle = dialogTitle
     isMultiSelectionEnabled = false
     showOpenDialog(parent)
     fileSelectionMode = JFileChooser.FILES_ONLY
@@ -102,7 +103,6 @@ fun Container.Panel(
     }else{
         JPanel(layoutManager)
     }.also {
-
         constraint?.let {cons ->
             add(it,cons)
         } ?:add(it)
@@ -112,6 +112,23 @@ fun Container.Panel(
             it.setTitle(title)
         }
 
+    }.apply(apply)
+
+fun Container.CardPanel(
+    title:String?=null,
+    name: String,
+    layoutManager: LayoutManager?=null,
+    apply: JPanel.() -> Unit
+):JPanel =
+    if (layoutManager == null) {
+        JPanel()
+    }else{
+        JPanel(layoutManager)
+    }.also {
+        add(name,it)
+        title?.let {s ->
+            it.setTitle(title)
+        }
     }.apply(apply)
 
 /**
@@ -128,9 +145,16 @@ fun JPanel.getTitle():String?{
         null
     }
 }
+fun JPanel.referencePreferredSize(dimension: Dimension,changeHeight:Boolean = false,changeWidth: Boolean = false){
 
+    fun getN(boolean: Boolean,int: Int):Int =if (boolean) (int-40)/2 else int-40
 
+    preferredSize = Dimension(getN(changeWidth,dimension.width),getN(changeHeight,dimension.height))
 
+}
+fun JPanel.referencePreferredSize(dimension: Dimension,width:Int=0,height:Int=0){
+    this.preferredSize = Dimension(dimension.width+width,dimension.height+height)
+}
 /**
  * 添加常用部件
  */
