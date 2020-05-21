@@ -188,3 +188,6 @@ fun Container.StringComboBox(vararg element:String,isEditable:Boolean = false):J
         addItem(it)
     }
 }.also { add(it) }
+
+val <T> JComboBox<T>.nowElement: T
+    get() = this.editor.item as T

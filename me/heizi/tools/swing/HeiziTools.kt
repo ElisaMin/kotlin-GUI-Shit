@@ -3,11 +3,13 @@ package me.heizi.tools.swing
 import kotlinx.coroutines.runBlocking
 import me.heizi.swing.*
 import me.heizi.utills.*
-import me.heizi.utills.adb
-import me.heizi.utills.fastboot
-import me.heizi.utills.platformTool
+import me.heizi.utills.CommandExecutor.log
+import me.heizi.utills.PlatformTools.adb
+import me.heizi.utills.PlatformTools.fastboot
+import me.heizi.utills.PlatformTools.platformTool
 import java.awt.*
 import javax.swing.JCheckBox
+import javax.swing.JComboBox
 import javax.swing.JFrame
 import javax.swing.JTextField
 import kotlin.concurrent.thread
@@ -56,10 +58,10 @@ fun start(args: Array<String>) = runBlocking {
                     //card 2
                     CardPanel( name = "fastboot") PanelFastboot@{
                         background =Color.white
+
                         var slotACheckbox:JCheckBox? = null
                         var slotBCheckbox:JCheckBox? = null
-                        var partitionEditor:JTextField?=null
-                        var disableVerityVerification:JCheckBox?=null
+                        var pttGetter:JComboBox<String>? = null
 
 
 
@@ -137,12 +139,12 @@ fun start(args: Array<String>) = runBlocking {
 
                                 StringComboBox("输入分区名","system", "vendor", "dtbo", "vbmeta","boot",isEditable = true)
                                 slotACheckbox = CheckBox("_a",true)
-                                slotACheckbox = CheckBox("_b")
+                                slotBCheckbox = CheckBox("_b")
                             }
                             Panel("操作：") {
                                 preferredSize = Dimension(300, 60)
                                 Button("选择文件刷入") {
-
+                                    flash(pttGetter!!.nowElement)
                                 }
                                 Button ("不保留AVB刷入") {
 

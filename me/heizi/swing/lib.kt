@@ -6,7 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.heizi.utills.*
 import me.heizi.utills.PlatformTools.ADB.BootableMode.*
-import me.heizi.utills.platformTool
+import me.heizi.utills.PlatformTools.platformTool
 import java.io.IOException
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
