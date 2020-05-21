@@ -8,6 +8,9 @@ import me.heizi.utills.PlatformTools.adb
 import me.heizi.utills.PlatformTools.fastboot
 import me.heizi.utills.PlatformTools.platformTool
 import java.awt.*
+import java.io.File
+import java.io.FileWriter
+import java.lang.Exception
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JFrame
@@ -21,11 +24,12 @@ const val welcome =
         "教程：无，速速离开。\n" +
         "风险：高，但只要指令执行的没有问题，你出了任何问题与我无关。 \n" +
         "(我想Java和Kotlin不用授权吧？)"
-fun main(args: Array<String>) {
-    start(args)
-}
 
-fun start(args: Array<String>) = runBlocking {
+
+
+val icon = Toolkit.getDefaultToolkit().getImage(".\\lib\\icon.png")
+fun main(args: Array<String>) = runBlocking {
+    var first:Boolean=false
     thread {
         adb server false
         adb server true
@@ -33,9 +37,22 @@ fun start(args: Array<String>) = runBlocking {
 
     val cardLayout = CardLayout()
 
+    thread {
+        val file = File(".\\config.config")
+        if (!file.exists()) {
+            first = true
+            try {
+                FileWriter(file).apply { write("first:|1|\n") }.close()
+            } catch (e:Exception) {
+                e.stackTrace
+            }
+        }
+    }
+
     Frame {
+        this.iconImage = icon
         background = Color.white
-        size = Dimension(700, 600)
+        size = Dimension(380, 300)
         fun getFrameSize(): Dimension = this.size
         title = "HeiziTool"
         var parent: Container? = null
@@ -47,11 +64,16 @@ fun start(args: Array<String>) = runBlocking {
                 Panel(constraint = BorderLayout.CENTER, layoutManager = cardLayout)
                 cardview@{
                     // card 1
-//                    CardPanel(title = "欢迎使用Heizi工具箱", name = "welcome") {
-//                        Label {
-//                            welcome
-//                        }
-//                    }
+                    if (first) {
+                        CardPanel(title = "欢迎使用Heizi工具箱", name = "welcome") {
+                            Label {
+                                welcome
+                            }
+                        }
+                    }else{
+                        this@Frame.size = Dimension(380, 340)
+                    }
+
 
 
 
@@ -67,44 +89,49 @@ fun start(args: Array<String>) = runBlocking {
 
                         //flash
 
-                        fun flash(ptt: String,flashab:Boolean =false) {
+                        fun flash(ptt: String,flashab:Boolean =false,isAVBReove:Boolean=false) {
 
                             waitForDeviceFastboot {
                                 getFile(dialogTitle = "选择${ptt}镜像")?.let { file ->
-                                    if (!flashab){
+                                    (if (isAVBReove)
+                                        if (!flashab){
+                                            fastboot removeAVB  Pair(ptt, file)
+                                        } else {
+                                            fastboot removeAVB_ab  Pair(ptt, file)
+                                        }
+                                    else if (!flashab){
                                         fastboot flash Pair(ptt, file)
                                     } else {
                                         fastboot flash_ab Pair(ptt, file)
-                                    } showResultAsDialog true
-
+                                    }) showResultAsDialog true
                                 } ?: this@runBlocking.log("没选择文件")
                             }
                         }
-                        fun slotChoice (ptt:String) {
+                        fun slotChoice (ptt:String,isAVBRemove:Boolean=false) {
                             val a = slotACheckbox!!.isSelected
                             val b = slotBCheckbox!!.isSelected
                             when{
-                                a  and !b -> flash(ptt = "${ptt}_a")
-                                !a and  b -> flash(ptt = "${ptt}_b")
-                                a  and  b -> flash(ptt = ptt,flashab = true)
-                                else -> flash(ptt = ptt)
+                                a  and !b -> flash(ptt = "${ptt}_a",isAVBReove = isAVBRemove)
+                                !a and  b -> flash(ptt = "${ptt}_b",isAVBReove = isAVBRemove)
+                                a  and  b -> flash(ptt = ptt,flashab = true,isAVBReove = isAVBRemove)
+                                else -> flash(ptt = ptt,isAVBReove = isAVBRemove)
                             }
                         }
 
-                        Panel("提示") {
-                            preferredSize = Dimension(340, 200)
-                            Label {
-                                """1.启动镜像使用`fastboot boot [文件]`的指令
-                                    
-                                2.刷Boot流程：
-                                。   1) 输入boot或者点击boot按钮直接快速输入
-                                。   2) 选择分区槽_a或者_b
-                                。   3) 
-                                    
-                                """.trimIndent()
-                            }
-
-                        }
+//                        Panel("提示") {
+//                            preferredSize = Dimension(340, 200)
+//                            Label {
+//                                """1.启动镜像使用`fastboot boot [文件]`的指令
+//
+//                                2.刷Boot流程：
+//                                。   1) 输入boot或者点击boot按钮直接快速输入
+//                                。   2) 选择分区槽_a或者_b
+//                                。   3)
+//
+//                                """.trimIndent()
+//                            }
+//
+//                        }
 
                         Panel(title = "常规操作") {
                             preferredSize = Dimension(340, 60)
@@ -137,20 +164,32 @@ fun start(args: Array<String>) = runBlocking {
                             Panel ("分区名")  name@{
                                 preferredSize = Dimension(this@panelptt.preferredSize.width-40,60)
 
-                                StringComboBox("输入分区名","system", "vendor", "dtbo", "vbmeta","boot",isEditable = true)
+                                pttGetter = StringComboBox("输入分区名","system", "vendor", "dtbo", "vbmeta","boot",isEditable = true)
                                 slotACheckbox = CheckBox("_a",true)
                                 slotBCheckbox = CheckBox("_b")
                             }
                             Panel("操作：") {
                                 preferredSize = Dimension(300, 60)
                                 Button("选择文件刷入") {
-                                    flash(pttGetter!!.nowElement)
+
+                                    slotChoice(pttGetter!!.nowElement)
                                 }
                                 Button ("不保留AVB刷入") {
-
+                                    slotChoice(pttGetter!!.nowElement,isAVBRemove = true)
                                 }
                                 Button("清除") {
-
+                                    val p = pttGetter!!.nowElement
+                                    val a = slotACheckbox!!.isSelected
+                                    val b = slotBCheckbox!!.isSelected
+                                    if (a and b ) {
+                                        platformTool fastboot arrayOf(
+                                            arrayListOf("erase","${p}_a"), arrayListOf("erase","${p}_b")
+                                        ) showResultAsDialog true
+                                    }else if (!a and !b) {
+                                        fastboot erase p
+                                    }else {
+                                        fastboot erase "${p}_${if (a) "a" else "b"}"
+                                    }
                                 }
                             }
                         }
@@ -171,9 +210,11 @@ fun start(args: Array<String>) = runBlocking {
                     CardPanel(title = "ADB Tools", name = "adb") {
                         background =Color.white
                         Panel(title = "文件交互") {
+                            Panel (title = "复制文件到电脑的……") {
+                                Label { "手机路径:" }
+                                Input {  }
 
-                            Button("pull") {
-                                log("摆饰，未开启")
+
                             }
                             Button("push") {
                                 log("摆饰，未开启")
@@ -193,18 +234,18 @@ fun start(args: Array<String>) = runBlocking {
                             Button ("V50020M ROOT") {
 
 
-                                waitForDeviceADB {
-
-                                    val fail : CommandResult.()->Unit = {
-                                        log("失败")
-                                        showResultAsDialog(true)
-                                    }
-
-                                    adb push Pair(".\\file\\v500n20m","/data/local/tmp/run") whenSuccess {
-                                        this + (adb shell {"chmod 755 /data/local/tmp/run && run"}) showResultAsDialog true
-
-                                    } whenFailed(fail)
-                                }
+//                                waitForDeviceADB {
+//
+//                                    val fail : CommandResult.()->Unit = {
+//                                        log("失败")
+//                                        showResultAsDialog(true)
+//                                    }
+//
+//                                    adb push Pair(".\\file\\v500n20m","/data/local/tmp/run") whenSuccess {
+//                                        this + (adb shell {"chmod 755 /data/local/tmp/run && run"}) showResultAsDialog true
+//
+//                                    } whenFailed(fail)
+//                                }
                             }
                         }
                         val rt = "重启到"
@@ -232,17 +273,13 @@ fun start(args: Array<String>) = runBlocking {
                 title = "常用工具/分类"
             ) {
                 background =Color.white
-                Button("adb工具") {
-                    this@Frame.size = Dimension(500, 500)
-                    cardLayout.show(parent, "adb")
-                }
+//                Button("adb工具") {
+//                    this@Frame.size = Dimension(500, 500)
+//                    cardLayout.show(parent, "adb")
+//                }
 
-                Button ("fastboot分区管理"){
-
-                }
-
-                Button("fastboot其他工具") {
-                    this@Frame.size = Dimension(500, 500)
+                Button("fastboot工具") {
+                    this@Frame.size = Dimension(380, 340)
                     cardLayout.show(parent, "fastboot")
                 }
 
@@ -273,4 +310,5 @@ fun start(args: Array<String>) = runBlocking {
             }
         }
     }
+    Unit
 }

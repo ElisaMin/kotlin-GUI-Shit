@@ -190,4 +190,4 @@ fun Container.StringComboBox(vararg element:String,isEditable:Boolean = false):J
 }.also { add(it) }
 
 val <T> JComboBox<T>.nowElement: T
-    get() = this.editor.item as T
+    get() =this.editor.item as T

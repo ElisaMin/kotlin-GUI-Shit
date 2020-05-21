@@ -5,6 +5,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.heizi.utills.*
+import me.heizi.utills.CommandExecutor.log
 import me.heizi.utills.PlatformTools.ADB.BootableMode.*
 import me.heizi.utills.PlatformTools.platformTool
 import java.io.IOException
@@ -49,47 +50,47 @@ fun main(args: Array<String>) {
     }
 }
 
-fun waitForDeviceADB(dosth:CommandResult.()->Unit){
-    var alterDialog:JDialog? = null
-    var result : CommandResult? = null
-
-    GlobalScope.launch (Dispatchers.IO) {
-        alterDialog = TextDialog { "等待安卓设备中" }
-
-
-    }
-    GlobalScope.launch (Dispatchers.Default) {
-        while (true) {
-            result?.let {
-                log(this.toString())
-            }
-            delay(1000)
-            if ( result!=null) {
-                result
-                    ?.whenSuccess {
-                        dosth()
-                    }   ?.whenFailed {
-                        log("wait-for-device 失败")
-                    }
-                alterDialog?.isVisible = false
-                break
-            }
-            if (alterDialog != null) {
-                if (!alterDialog?.isVisible!!) {
-                    result = CommandResult(114514)
-                    break
-                }
-            }
-
-        }
-    }
-
-
-    thread { result = platformTool adb "wait-for-device" }
-
-
-
-}
+//fun waitForDeviceADB(dosth:CommandResult.()->Unit){
+//    var alterDialog:JDialog? = null
+//    var result : CommandResult? = null
+//
+//    GlobalScope.launch (Dispatchers.IO) {
+//        alterDialog = TextDialog { "等待安卓设备中" }
+//
+//
+//    }
+//    GlobalScope.launch (Dispatchers.Default) {
+//        while (true) {
+//            result?.let {
+//                log(this.toString())
+//            }
+//            delay(1000)
+//            if ( result!=null) {
+//                result
+//                    ?.whenSuccess {
+//                        dosth()
+//                    }   ?.whenFailed {
+//                        log("wait-for-device 失败")
+//                    }
+//                alterDialog?.isVisible = false
+//                break
+//            }
+//            if (alterDialog != null) {
+//                if (!alterDialog?.isVisible!!) {
+//                    result = CommandResult(114514)
+//                    break
+//                }
+//            }
+//
+//        }
+//    }
+//
+//
+//    thread { result = platformTool adb "wait-for-device" }
+//
+//
+//
+//}
 
 fun waitForDeviceFastboot(dosth:()->Unit){
     var dialog: JDialog? = null
@@ -108,7 +109,7 @@ fun waitForDeviceFastboot(dosth:()->Unit){
             try {
                 loop@ while (true) {
                     if (dialog != null){if (!dialog!!.isVisible) {
-                        println("窗口关闭")
+                        log("窗口关闭")
                         break@loop
                     }}
                     val (b, s) = platformTool fastboot "devices"
@@ -121,7 +122,7 @@ fun waitForDeviceFastboot(dosth:()->Unit){
                                 dosth()
                                 break@loop
                             }
-                            else -> println("多台设备，请拔掉电脑的电源线然后静静去世（雾）（不会真有人知道现在要干嘛吧 不会吧）。")
+                            else -> println("不允许多台设备，请拔掉电脑的电源线然后静静去世（雾）（不会真有人知道现在要干嘛吧 不会吧）。")
                         }
                     } else {
                         "cannot run fastboot devices ,error=9,$s \n请尝试下载完整包。".run {

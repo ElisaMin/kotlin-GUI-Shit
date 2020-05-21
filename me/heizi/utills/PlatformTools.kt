@@ -1,5 +1,6 @@
 package me.heizi.utills
 
+import me.heizi.utills.CommandExecutor.log
 import kotlin.concurrent.thread
 
 
@@ -49,9 +50,36 @@ object PlatformTools{
             }
         }
 
-        //partition
-        infix fun flash (pair: Pair<String,String>):CommandResult = platformTool fastboot "flash ${pair.first} ${pair.second}"
-        infix fun flash_ab(pair: Pair<String, String>):CommandResult = platformTool fastboot arrayOf(arrayListOf("flash",pair.first+"_a",pair.second), arrayListOf("flash",pair.first+"_b",pair.second))
+        //flash
+        private fun getArrayListForFlash(pair: Pair<String, String>, isA: Boolean?=null, isAVBRemove: Boolean = false): ArrayList<String> =
+            arrayListOf<String>().apply {
+                if (isAVBRemove) {
+                    add(" --disable-verity")
+                    add(" --disable-verification")
+                }
+                add("flash")
+
+                if (isA!=null) add( pair.first+"_${if (isA) "a" else "b"}" )
+                else add(pair.first)
+
+                add(pair.second)
+
+                log(toString())
+            }
+
+        infix fun flash (pair: Pair<String,String>):CommandResult = platformTool fastboot getArrayListForFlash(pair)
+        infix fun flash_ab(pair: Pair<String, String>):CommandResult = platformTool fastboot arrayOf(
+            getArrayListForFlash(pair,true),
+            getArrayListForFlash(pair,false)
+        )
+        //flash without avb
+        infix fun removeAVB (pair: Pair<String,String>):CommandResult = platformTool fastboot getArrayListForFlash(pair,isAVBRemove = true)
+        infix fun removeAVB_ab(pair: Pair<String, String>):CommandResult = platformTool fastboot arrayOf(
+            getArrayListForFlash(pair,true,true),
+            getArrayListForFlash(pair,false,true)
+        )
+
+        //erase
         infix fun erase (partition:String):CommandResult = platformTool fastboot "erase $partition"
 
         //slot
