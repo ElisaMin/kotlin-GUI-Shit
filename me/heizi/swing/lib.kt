@@ -2,21 +2,93 @@ package me.heizi.swing
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import me.heizi.utills.log
+import me.heizi.utills.*
+import me.heizi.utills.PlatformTools.ADB.BootableMode.*
 import me.heizi.utills.platformTool
 import java.io.IOException
+import javax.swing.JCheckBox
+import javax.swing.JComboBox
 import javax.swing.JDialog
+import kotlin.concurrent.thread
 
 inline infix fun Boolean.True(block: (Boolean)->Unit):Boolean = this.also { if (it) block(this) }
 inline infix fun Boolean.False(block:(Boolean)->Unit):Boolean = this.also { if (!it) block(this) }
 fun String.toHtml(): String = """<html>
     <body><div>${this.replace("\n","<br />")}</div>
-</body></html>""".trimIndent().println()
+</body></html>""".trimIndent()
 
 fun <T> T.println() : T {
     kotlin.io.println(toString())
     return this
+}
+
+fun main(args: Array<String>) {
+    Frame {
+        Panel {
+            val check1= JCheckBox("shit")
+            check1.addChangeListener {
+                println("changeListener:on changing")
+                println("button:${it.source}\nis enable:${check1.isEnabled}\nis selected:${check1.isSelected}\n")
+            }
+            add(check1)
+            val combobox = JComboBox<String>()
+            combobox.run {
+
+                isEditable = true
+                arrayOf("","system","vendor","boot","vbmeta","dtbo","super").iterator().forEach {
+                    addItem(it)
+                }
+            }
+            add(combobox)
+            Button {
+                combobox.editor.item.println()
+            }
+        }
+    }
+}
+
+fun waitForDeviceADB(dosth:CommandResult.()->Unit){
+    var alterDialog:JDialog? = null
+    var result : CommandResult? = null
+
+    GlobalScope.launch (Dispatchers.IO) {
+        alterDialog = TextDialog { "等待安卓设备中" }
+
+
+    }
+    GlobalScope.launch (Dispatchers.Default) {
+        while (true) {
+            result?.let {
+                log(this.toString())
+            }
+            delay(1000)
+            if ( result!=null) {
+                result
+                    ?.whenSuccess {
+                        dosth()
+                    }   ?.whenFailed {
+                        log("wait-for-device 失败")
+                    }
+                alterDialog?.isVisible = false
+                break
+            }
+            if (alterDialog != null) {
+                if (!alterDialog?.isVisible!!) {
+                    result = CommandResult(114514)
+                    break
+                }
+            }
+
+        }
+    }
+
+
+    thread { result = platformTool adb "wait-for-device" }
+
+
+
 }
 
 fun waitForDeviceFastboot(dosth:()->Unit){

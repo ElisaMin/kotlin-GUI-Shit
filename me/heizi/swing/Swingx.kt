@@ -1,19 +1,12 @@
 package me.heizi.swing
 
 
-import kotlinx.coroutines.*
-import kotlinx.coroutines.Dispatchers.Default
-import kotlinx.coroutines.Dispatchers.IO
 import me.heizi.utills.CommandResult
-import me.heizi.utills.PlatformTools
-import me.heizi.utills.log
-import me.heizi.utills.platformTool
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
-import java.io.IOException
 import javax.swing.*
 import javax.swing.border.TitledBorder
 import kotlin.system.exitProcess
@@ -22,8 +15,10 @@ import kotlin.system.exitProcess
 
 
 
+val frameDefault = Frame (show = false) {}
 //fun Window.getFile(): String? = getFile(this)
-fun getFile(parent:Component = frame!!,dialogTitle:String = "选择文件" ):String? = JFileChooser().apply {
+
+fun getFile(parent:Component = frameDefault, dialogTitle:String = "选择文件" ):String? = JFileChooser().apply {
     this.dialogTitle = dialogTitle
     isMultiSelectionEnabled = false
     showOpenDialog(parent)
@@ -64,7 +59,7 @@ private val dialogDefaultSetting : JDialog.()->Unit = {
     setLocationRelativeTo(null)
 }
 fun Dialog(
-    frame:Frame = me.heizi.swing.frame!!,
+    frame:Frame = frameDefault,
     title:String = dialogDefaultTitle,
     modal :Boolean = false,
     show:Boolean =true,
@@ -72,7 +67,7 @@ fun Dialog(
 ):JDialog = JDialog(frame,title,modal).apply(apply).apply(dialogDefaultSetting).apply { this.isVisible = show }
 
 fun TextDialog(
-    frame: Frame =me.heizi.swing.frame!!,
+    frame: Frame = frameDefault,
     title: String = dialogDefaultTitle,
     labelSetting:(JLabel.()->Unit)? = null,
     show:Boolean =true,
@@ -129,6 +124,7 @@ fun Container.CardPanel(
         title?.let {s ->
             it.setTitle(title)
         }
+        //it.background = Color.WHITE
     }.apply(apply)
 
 /**
@@ -155,9 +151,13 @@ fun JPanel.referencePreferredSize(dimension: Dimension,changeHeight:Boolean = fa
 fun JPanel.referencePreferredSize(dimension: Dimension,width:Int=0,height:Int=0){
     this.preferredSize = Dimension(dimension.width+width,dimension.height+height)
 }
+fun JPanel.referenceMaxSize(dimension: Dimension): Unit {
+    maximumSize = dimension
+}
 /**
  * 添加常用部件
  */
+// Button
 fun JPanel.Button(name:String = "按钮",apply: JButton.(MouseEvent?) -> Unit) :JButton = JButton(name).apply{
     addMouseListener(object : MouseAdapter(){
         override fun mouseClicked(e: MouseEvent?) {
@@ -166,5 +166,25 @@ fun JPanel.Button(name:String = "按钮",apply: JButton.(MouseEvent?) -> Unit) :
     })
 }.also{add(it)}
 
-fun Container.Label(getString: () -> String) = JLabel(getString().toHtml()).also { add(it) }
+//Label
+fun Container.Label(getString: () -> String):JLabel = JLabel(getString().toHtml()).also { add(it) }
 
+//checkbox
+fun Container.CheckBox(title: String,selected:Boolean = false,icon:Icon?=null,apply: (JCheckBox.() -> Unit)?=null):JCheckBox =
+    if (icon == null) {
+    JCheckBox(title,selected)
+    } else {
+    JCheckBox(title,icon,selected)
+    }.apply { if (apply!==null) apply() }.also { add(it) }
+
+
+//text field
+fun Container.Input (text:String? = null,columns:Int = 0,apply: (JTextField.() -> Unit)?=null) : JTextField = JTextField(text,columns).apply { if (apply!==null) apply() }.also { add(it) }
+
+//combo box
+fun Container.StringComboBox(vararg element:String,isEditable:Boolean = false):JComboBox<String> = JComboBox<String>().apply{
+    this.isEditable = isEditable
+    arrayOf(*element).iterator().forEach {
+        addItem(it)
+    }
+}.also { add(it) }
