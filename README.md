@@ -5,12 +5,18 @@
 ## 又一个死库
 ```
 # 分支
-**master** 用Swing重写 在开发中  
+**master** 初次完成。
 **Awt**    已完成
 # 文件目录 
 ```
-swiwng/Main： 主要应用
-swing/swingx： Kotlin化的Swing （DSL比较合适）
-swing/lib：大大小小的扩展函数
-utills/CommandExecutor： fastboot adb 
+. me.heizi
+  .swing
+    .lib.kt 其实里面和swing无关。
+    .swingx.kt Swing的DSL扩展
+  .tools
+    .HeiziTools.kt 主角
+  .utills
+    .CommandExecutor.kt subprocess的封装
+    .CommandResult.kt 得到结果
+    .PlatformTools.kt subprocess的封装的封装
 ```
