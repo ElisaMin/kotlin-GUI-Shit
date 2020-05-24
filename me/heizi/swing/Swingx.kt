@@ -28,11 +28,12 @@ fun getFile(parent:Component = frameDefault, dialogTitle:String = "选择文件"
 
 
 fun showDialogAsResult(commandResult: CommandResult,title: String = "执行结果"):Dialog = Dialog {
+    this.title = title
     val (b,s) = commandResult
     Label { "执行"+ if (b){ "成功：" }else{ "失败：" } +"\n $s"}
     setSize(300,300)
 }
-infix fun CommandResult.showResultAsDialog(boolean: Boolean) : Dialog = showDialogAsResult(this)
+infix fun CommandResult.showResultAsDialog(boolean: Boolean) : Dialog? = if (boolean) showDialogAsResult(this) else null
 
 fun Window.exitOnClosing(code:Int) {addWindowListener(object :WindowAdapter(){ override fun windowClosing(e: WindowEvent?) { exitProcess(code)} })}
 infix fun Window.exitOnClosing(boolean: Boolean) {addWindowListener(object :WindowAdapter(){ override fun windowClosing(e: WindowEvent?) { if (boolean)exitProcess(0)  } })}
@@ -104,7 +105,7 @@ fun Container.Panel(
 
 
         title?.let {s ->
-            it.setTitle(title)
+            it.setTitle(s)
         }
 
     }.apply(apply)
@@ -122,7 +123,7 @@ fun Container.CardPanel(
     }.also {
         add(name,it)
         title?.let {s ->
-            it.setTitle(title)
+            it.setTitle(s)
         }
         //it.background = Color.WHITE
     }.apply(apply)

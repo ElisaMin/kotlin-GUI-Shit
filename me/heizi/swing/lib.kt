@@ -17,9 +17,9 @@ import kotlin.concurrent.thread
 inline infix fun Boolean.True(block: (Boolean)->Unit):Boolean = this.also { if (it) block(this) }
 inline infix fun Boolean.False(block:(Boolean)->Unit):Boolean = this.also { if (!it) block(this) }
 fun String.toHtml(): String = """<html>
-    <body><div>${this.replace("\n","<br />")}</div>
-</body></html>""".trimIndent()
-
+    <body><div>${this.replace("\n"," <br /> ")}
+</div></body></html>""".trimIndent()
+fun String.toHTMLTag():String = (this.replace("\n"," <br /> ").replace("</div></body></html>","")+"</div></body></html>").println()
 fun <T> T.println() : T {
     kotlin.io.println(toString())
     return this

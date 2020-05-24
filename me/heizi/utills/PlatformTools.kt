@@ -54,8 +54,8 @@ object PlatformTools{
         private fun getArrayListForFlash(pair: Pair<String, String>, isA: Boolean?=null, isAVBRemove: Boolean = false): ArrayList<String> =
             arrayListOf<String>().apply {
                 if (isAVBRemove) {
-                    add(" --disable-verity")
-                    add(" --disable-verification")
+                    add("--disable-verity")
+                    add("--disable-verification")
                 }
                 add("flash")
 

@@ -9,12 +9,10 @@ import me.heizi.utills.PlatformTools.fastboot
 import me.heizi.utills.PlatformTools.platformTool
 import java.awt.*
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileWriter
 import java.lang.Exception
-import javax.swing.JCheckBox
-import javax.swing.JComboBox
-import javax.swing.JFrame
-import javax.swing.JTextField
+import javax.swing.*
 import kotlin.concurrent.thread
 
 
@@ -57,9 +55,11 @@ fun main(args: Array<String>) = runBlocking {
         title = "HeiziTool"
         var parent: Container? = null
         //主框架
+
         Panel(layoutManager = BorderLayout()) mainPanel@{
             //card view
             this.background =Color.white
+
             parent =
                 Panel(constraint = BorderLayout.CENTER, layoutManager = cardLayout)
                 cardview@{
@@ -277,7 +277,108 @@ fun main(args: Array<String>) = runBlocking {
 //                    this@Frame.size = Dimension(500, 500)
 //                    cardLayout.show(parent, "adb")
 //                }
+                Button ("破解LGUP 1.14" ) {
+                    var lable:JLabel? = null
+                    var logString = ""
 
+                    fun Any.lognow(string: String): Unit {
+                        logString += "$string\n"
+                        log(string)
+                        lable?.text = logString.toHtml()
+                    }
+
+                    Dialog {
+                        this.title = "破解LGUP"
+                        lable = Label { "破解lgup" }
+                    }
+                    lognow("初始化中")
+                    //省下内存
+                    val programFiles86 = System.getenv("ProgramFiles(x86)")!!
+                    val lgupInstallPath = "$programFiles86/LG Electronics/LGUP"
+                    //造轮子
+                    fun String.toFile(): File = File(this)
+                    fun String.toFile(block:File.() ->Unit) = File(this).apply(block)
+                    //判断成功
+                    var isSuccess:Boolean = false
+
+                    //check its installed or not.
+                    if(lgupInstallPath.toFile().exists()){
+                        //1. DLL
+                        lognow("检测到安装目录为默认安装目录。")
+                        "$lgupInstallPath/model/common/".toFile {
+
+                            if (!exists()){
+                                lognow("common文件夹不存在，正在创建。")
+                                isSuccess = mkdirs()
+                            }else{
+                                lognow("common文件夹存在，跳过创建。")
+                                isSuccess = true
+                            }
+
+
+                            if (isSuccess){
+
+                                "files/lgup/LGUP_Common.dll".toFile {
+
+                                    isSuccess = try {
+                                        lognow("DLL文件复制中……")
+                                        copyTo("$lgupInstallPath/model/common/LGUP_Common.dll".toFile(),true)
+                                        true
+                                    }catch (e:FileAlreadyExistsException) {
+                                        lognow("请以管理员权限执行本软件。\n$e")
+                                        false
+                                    }
+                                    catch (e:NoSuchFileException){
+                                        e.printStackTrace()
+                                        lognow("找不到$path。\n$e")
+                                        false
+                                    }catch (e:FileNotFoundException){
+                                        e.printStackTrace()
+                                        lognow("找不到$path。\n$e")
+                                        false
+                                    }catch (e:Exception){
+                                        e.printStackTrace()
+                                        lognow("复制失败。\n$e")
+                                        false
+                                    }
+                                }
+                            }else{
+                                lognow("文件夹创建失败。")
+                            }
+                        }
+
+                        //2. EXE
+                        if (isSuccess){
+                            lognow("DLL文件复制成功，正在复制EXE文件。")
+                            "files/lgup/LGUP.exe".toFile{
+                                isSuccess = try {
+                                    copyTo("$lgupInstallPath/LGUP.exe".toFile(),true)
+                                    true
+                                }catch (e:FileAlreadyExistsException) {
+                                    lognow("请以管理员权限执行本软件。\n$e")
+                                    false
+                                }
+                                catch (e:NoSuchFileException){
+                                    e.printStackTrace()
+                                    lognow("找不到$path。\n$e")
+                                    false
+                                }catch (e:FileNotFoundException){
+                                    e.printStackTrace()
+                                    lognow("找不到$path。\n$e")
+                                    false
+                                }catch (e:Exception){
+                                    e.printStackTrace()
+                                    lognow("复制失败。\n$e")
+                                    false
+                                }
+                                lognow("EXE复制${if (isSuccess) "成功" else "失败"}")
+                            }
+                        }
+                    }else{
+                        lognow("未检测到安装路径")
+                    }
+                    lognow("破解${if (isSuccess) "成功" else "失败"}，关闭弹窗以结束。")
+                }
                 Button("fastboot工具") {
                     this@Frame.size = Dimension(380, 340)
                     cardLayout.show(parent, "fastboot")
