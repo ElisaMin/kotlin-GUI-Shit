@@ -26,28 +26,39 @@ fun <T> T.println() : T {
 }
 
 fun main(args: Array<String>) {
-    Frame {
-        Panel {
-            val check1= JCheckBox("shit")
-            check1.addChangeListener {
-                println("changeListener:on changing")
-                println("button:${it.source}\nis enable:${check1.isEnabled}\nis selected:${check1.isSelected}\n")
-            }
-            add(check1)
-            val combobox = JComboBox<String>()
-            combobox.run {
+    val takeifTest = "1"
 
-                isEditable = true
-                arrayOf("","system","vendor","boot","vbmeta","dtbo","super").iterator().forEach {
-                    addItem(it)
-                }
-            }
-            add(combobox)
-            Button {
-                combobox.editor.item.println()
-            }
-        }
+    if ( takeifTest.takeIf {
+                takeifTest != "1"
+    } == null ) {
+        println(null)
+    }else{
+        println("notnull")
+        println(takeifTest)
     }
+
+        //    Frame {
+//        Panel {
+//            val check1= JCheckBox("shit")
+//            check1.addChangeListener {
+//                println("changeListener:on changing")
+//                println("button:${it.source}\nis enable:${check1.isEnabled}\nis selected:${check1.isSelected}\n")
+//            }
+//            add(check1)
+//            val combobox = JComboBox<String>()
+//            combobox.run {
+//
+//                isEditable = true
+//                arrayOf("","system","vendor","boot","vbmeta","dtbo","super").iterator().forEach {
+//                    addItem(it)
+//                }
+//            }
+//            add(combobox)
+//            Button {
+//                combobox.editor.item.println()
+//            }
+//        }
+//    }
 }
 
 //fun waitForDeviceADB(dosth:CommandResult.()->Unit){

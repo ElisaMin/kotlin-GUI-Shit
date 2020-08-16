@@ -65,7 +65,7 @@ fun Dialog(
     modal :Boolean = false,
     show:Boolean =true,
     apply: JDialog.() -> Unit
-):JDialog = JDialog(frame,title,modal).apply(apply).apply(dialogDefaultSetting).apply { this.isVisible = show }
+):JDialog = JDialog(frame,title,modal).apply(dialogDefaultSetting).apply { this.isVisible = show }.apply(apply)
 
 fun TextDialog(
     frame: Frame = frameDefault,

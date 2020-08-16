@@ -92,7 +92,10 @@ fun main(args: Array<String>) = runBlocking {
                         fun flash(ptt: String,flashab:Boolean =false,isAVBReove:Boolean=false) {
 
                             waitForDeviceFastboot {
-                                getFile(dialogTitle = "选择${ptt}镜像")?.let { file ->
+                                getFile(dialogTitle = "选择${ptt}镜像").takeIf {
+                                    if ( it == null) false else (it.length > 2)
+                                }?.let { file ->
+                                    log(file)
                                     (if (isAVBReove)
                                         if (!flashab){
                                             fastboot removeAVB  Pair(ptt, file)
@@ -277,7 +280,7 @@ fun main(args: Array<String>) = runBlocking {
 //                    this@Frame.size = Dimension(500, 500)
 //                    cardLayout.show(parent, "adb")
 //                }
-                Button ("破解LGUP 1.14" ) {
+                Button ("破解LGUP" ) {
                     var lable:JLabel? = null
                     var logString = ""
 
@@ -288,7 +291,7 @@ fun main(args: Array<String>) = runBlocking {
                     }
 
                     Dialog {
-                        this.title = "破解LGUP"
+                        this.title = "破解LGUP 1.14"
                         lable = Label { "破解lgup" }
                     }
                     lognow("初始化中")
@@ -307,12 +310,12 @@ fun main(args: Array<String>) = runBlocking {
                         lognow("检测到安装目录为默认安装目录。")
                         "$lgupInstallPath/model/common/".toFile {
 
-                            if (!exists()){
+                            isSuccess = if (!exists()){
                                 lognow("common文件夹不存在，正在创建。")
-                                isSuccess = mkdirs()
+                                mkdirs()
                             }else{
                                 lognow("common文件夹存在，跳过创建。")
-                                isSuccess = true
+                                true
                             }
 
 
@@ -383,31 +386,60 @@ fun main(args: Array<String>) = runBlocking {
                     this@Frame.size = Dimension(380, 340)
                     cardLayout.show(parent, "fastboot")
                 }
+                Button("帮助"){
+                    Dialog (title = "帮助") dialog@{
+                        Panel dialogPanel@{
+                            referencePreferredSize(this@dialog.size,0,0)
 
-                Button("刷Boot") {
-                    waitForDeviceFastboot {
-                        fun flashBoot(status: Boolean?): Unit {
-                            getFile()?.let { file ->
-                                when (status) {
-                                    true -> fastboot flash Pair("boot_a", file)
-                                    false -> fastboot flash Pair("boot_b", file)
-                                    else -> fastboot flash_ab Pair("boot", file)
-                                } showResultAsDialog true
-                            } ?: this@runBlocking.log("没选择文件")
+                            Panel(title="Fastboot工具使用提示"){
+                                referencePreferredSize(this@dialogPanel.preferredSize,-40,-40)
+
+                                Label { """
+                                    重启：让你的设备重启
+                                    清除数据：清除你的设备数据
+                                    启动镜像：fastboot boot img
+                                
+                                    分区操作：选择镜像用fastboot flash 指令刷入对应的分区，不保留avb只在刷入vbmeta分区时起作用，属于特殊情况，一般情况下使用“选择文件刷入”即可。
+                                """.trimIndent() }.let{
+                                    it.preferredSize = Dimension(preferredSize.width-40,120)
+                                }
+                            }
+
+                            Panel (title="破解LGUP") {
+                                Label{
+                                    """
+                                支持版本：1.14
+                            """.trimIndent()
+                                }
+                            }
                         }
-                        Dialog {
-                            Button(name = "刷入A分区") {
-                                flashBoot(true)
-                            }
-                            Button(name = "刷入B分区") {
-                                flashBoot(false)
-                            }
-                            Button(name = "一起刷") {
-                                flashBoot(null)
-                            }
-                        }
-                    }
-                }
+                        this@dialog.setSize(500,300)
+                    } }
+
+//                Button("刷Boot") {
+//                    waitForDeviceFastboot {
+//                        fun flashBoot(status: Boolean?): Unit {
+//                            getFile()?.let { file ->
+//                                when (status) {
+//                                    true -> fastboot flash Pair("boot_a", file)
+//                                    false -> fastboot flash Pair("boot_b", file)
+//                                    else -> fastboot flash_ab Pair("boot", file)
+//                                } showResultAsDialog true
+//                            } ?: this@runBlocking.log("没选择文件")
+//                        }
+//                        Dialog {
+//                            Button(name = "刷入A分区") {
+//                                flashBoot(true)
+//                            }
+//                            Button(name = "刷入B分区") {
+//                                flashBoot(false)
+//                            }
+//                            Button(name = "一起刷") {
+//                                flashBoot(null)
+//                            }
+//                        }
+//                    }
+//                }
             }
         }
     }
