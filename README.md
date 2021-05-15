@@ -1,3 +1,10 @@
+# 归档通知 #20210516
+这个项目是包含了 Swing KotlinDSL和shell command line executor 现在有了更好的解决方案
+* kotlin swing dsl -> jetpack compose (or jetbrains compose)
+* commandline executor -> [khell](https://github.com/ElisaMin/Khell)
+
+这个项目也被重写了 欢迎预览新的项目：[HFT](https://github.com/ElisaMin/Heizi-Flashing-Tools)
+
 # 恭喜你发现史前巨坟
 （2020.4.10 写下）
 ```
